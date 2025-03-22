@@ -1,0 +1,19 @@
+[package]
+name = "cstimer-analyzer-web"
+version = "0.3.2"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4.38"
+console_error_panic_hook = "0.1.7"
+env_logger = "0.11.5"
+plotters = "0.3.7"
+plotters-canvas = "0.3.1"
+regex = "1.11.0"
+serde = { version = "1.0.219", features = ["derive"] }
+serde-wasm-bindgen = "0.6.5"
+wasm-bindgen = "0.2.100"
+web-sys = "0.3.77"
+
+[lib]
+crate-type = ["cdylib", "rlib"]

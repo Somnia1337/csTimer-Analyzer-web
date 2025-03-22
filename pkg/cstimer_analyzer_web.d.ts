@@ -1,16 +1,18 @@
 /* tslint:disable */
 /* eslint-disable */
-export function analyze_from_files(options_txt: Uint8Array, data_txt: Uint8Array): any;
+export function analyze_from_files(options_txt: Uint8Array, data_txt: Uint8Array, canvas: HTMLCanvasElement): any;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly analyze_from_files: (a: number, b: number, c: number, d: number) => [number, number, number];
+  readonly analyze_from_files: (a: number, b: number, c: number, d: number, e: any) => [number, number, number];
+  readonly __wbindgen_exn_store: (a: number) => void;
+  readonly __externref_table_alloc: () => number;
+  readonly __wbindgen_export_2: WebAssembly.Table;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
-  readonly __wbindgen_export_3: WebAssembly.Table;
   readonly __externref_table_dealloc: (a: number) => void;
   readonly __wbindgen_start: () => void;
 }

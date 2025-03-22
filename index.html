@@ -1,47 +1,148 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>csTimer Analyzer</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <style>
       :root {
-        --primary-color: #2196f3;
-        --hover-color: #1976d2;
-        --background: #f5f5f5;
+        --primary-color: #377dfc;
+        --secondary-color: #3a82fc;
+        --accent-color: #ff4081;
+        --background: #f9f9f9;
+        --text-color: #333;
+        --card-bg: #ffffff;
+        --border-radius: 12px;
+        --shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        --transition: all 0.3s ease;
+      }
+
+      * {
+        box-sizing: border-box;
       }
 
       body {
-        font-family: "Segoe UI", system-ui, sans-serif;
+        font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+          sans-serif;
+        line-height: 1.6;
+        color: var(--text-color);
+        background-color: var(--background);
+        background-image: linear-gradient(135deg, #f5f7fa 0%, #e8ecf5 100%);
+        min-height: 100vh;
         margin: 0;
         padding: 2rem;
-        background-color: var(--background);
-        max-width: 1000px;
-        margin: 0 auto;
       }
 
       .container {
-        background: white;
-        padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        max-width: 1000px;
+        margin: 0 auto;
+        background: var(--card-bg);
+        padding: 2.5rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+      }
+
+      .header-icon {
+        font-size: 2rem;
+        color: var(--primary-color);
+        margin-right: 1rem;
       }
 
       h2 {
-        color: #333;
-        margin: 0 0 2rem 0;
+        color: var(--primary-color);
         font-size: 1.8rem;
-        border-bottom: 2px solid var(--primary-color);
-        padding-bottom: 0.5rem;
+        font-weight: 600;
+        margin: 0;
+        position: relative;
+      }
+
+      h2::after {
+        content: "";
+        position: absolute;
+        bottom: -8px;
+        left: 0;
+        width: 60px;
+        height: 3px;
+        background: var(--accent-color);
+        border-radius: 2px;
       }
 
       .input-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      @media (max-width: 768px) {
+        .input-group {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .options-container {
         display: flex;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
+        flex-direction: column;
+      }
+
+      .option-label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+      }
+
+      .option-label i {
+        margin-right: 0.5rem;
+      }
+
+      textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        background: #fcfcfc;
+        font-family: "Consolas", "Courier New", monospace;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: #444;
+        resize: vertical;
+        transition: var(--transition);
+        min-height: 200px;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.2);
+      }
+
+      .right-panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .file-input-container {
+        margin-bottom: 1.2rem;
       }
 
       .file-input {
         position: relative;
-        flex: 1;
+        width: 100%;
+        height: 140px;
+        margin-bottom: 1.2rem;
       }
 
       .file-input input[type="file"] {
@@ -50,211 +151,399 @@
         width: 100%;
         height: 100%;
         cursor: pointer;
+        z-index: 2;
       }
 
-      .file-input label {
-        display: block;
-        padding: 0.8rem 1.2rem;
-        background: var(--primary-color);
-        color: white;
-        border-radius: 6px;
+      .file-input-ui {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(63, 81, 181, 0.05);
+        border: 2px dashed var(--primary-color);
+        border-radius: 8px;
+        transition: var(--transition);
+        padding: 1rem;
+      }
+
+      .file-input:hover .file-input-ui {
+        background: rgba(63, 81, 181, 0.1);
+      }
+
+      .file-icon {
+        font-size: 2rem;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+      }
+
+      .file-label {
         text-align: center;
-        transition: background 0.2s;
-      }
-
-      .file-input label:hover {
-        background: var(--hover-color);
-      }
-
-      button {
-        padding: 0.8rem 1.5rem;
-        background: var(--primary-color);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 1rem;
-        transition: all 0.2s;
-      }
-
-      button:hover {
-        background: var(--hover-color);
-        transform: translateY(-1px);
-      }
-
-      #result {
-        margin-top: 2rem;
-        padding: 1.5rem;
-        background: #fff;
-        border-radius: 6px;
-        border: 1px solid #eee;
-      }
-
-      pre,
-      code {
-        font-family: "Consolas", "Courier New", monospace;
-        background: #f8f8f8;
-        padding: 0.5em;
-        border-radius: 4px;
+        font-weight: 500;
+        color: var(--primary-color);
       }
 
       .file-hint {
         display: block;
         margin-top: 0.5rem;
-        color: #666;
+        color: #777;
+        font-size: 0.85rem;
+        text-align: center;
+      }
+
+      .file-selected {
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        background: #f0f3ff;
+        border-radius: 6px;
         font-size: 0.9rem;
+        text-align: center;
+        display: none;
+      }
+
+      .file-selected.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .error-message {
+        padding: 1rem;
+        background-color: #ffebee;
+        border-left: 4px solid #f44336;
+        color: #b71c1c;
+        margin-bottom: 1rem;
+        border-radius: 4px;
+        font-weight: 500;
+        display: none;
+      }
+
+      .error-message.active {
+        display: block;
+      }
+
+      .loader {
+        display: none;
+        text-align: center;
+        padding: 1rem 0;
+      }
+
+      .loader.active {
+        display: block;
+      }
+
+      .loader-spinner {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(63, 81, 181, 0.1);
+        border-radius: 50%;
+        border-top-color: var(--primary-color);
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
 
       #result {
+        margin-top: 2rem;
+        padding: 2rem;
+        background: #fff;
+        border-radius: var(--border-radius);
+        border: 1px solid #eee;
+        overflow-x: auto;
+        color: #34495e;
+        line-height: 1.6;
+      }
+
+      #result h1 {
+        font-size: 2em;
+        margin-top: 1.2em;
+        margin-bottom: 0.8em;
+        padding-bottom: 0.3em;
+        border-bottom: 1px solid #eee;
+        color: var(--primary-color);
+      }
+
+      #result h2 {
+        font-size: 1.8em;
+        margin-top: 1.2em;
+        margin-bottom: 0.8em;
+        color: var(--primary-color);
+      }
+
+      #result h3 {
+        font-size: 1.6em;
+        margin-top: 1em;
+        margin-bottom: 0.6em;
+        color: var(--primary-color);
+      }
+
+      #result h4 {
+        font-size: 1.4em;
+        margin-top: 0.8em;
+        margin-bottom: 0.5em;
+      }
+
+      #result h5 {
+        font-size: 1.2em;
+        margin-top: 0.8em;
+        margin-bottom: 0.5em;
+      }
+
+      #result h6 {
+        font-size: 1em;
+        margin-top: 0.8em;
+        margin-bottom: 0.5em;
+        font-weight: 600;
+      }
+
+      #result pre {
+        background-color: #f8f8f880;
+        border-radius: 6px;
+        padding: 1em;
+        margin: 1em 0;
         overflow-x: auto;
       }
 
-      #result pre,
       #result code {
-        word-break: break-word;
-        max-width: 100%;
-      }
-
-      .file-display {
-        margin-top: 1rem;
-        padding: 0.8rem;
-        background: #f8f9fa;
-        border-radius: 6px;
-        border: 1px solid #eee;
-      }
-
-      .file-item {
-        display: flex;
-        align-items: center;
-        margin: 0.5rem 0;
-        color: #444;
-      }
-
-      .file-item span {
-        margin-left: 0.8rem;
+        font-family: "Consolas", "Courier New", monospace;
+        background-color: hsla(var(--primary-color-hsl), 0.08);
+        color: var(--primary-color);
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
         font-size: 0.9em;
       }
 
-      .file-icon {
-        width: 20px;
-        height: 20px;
-        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232196F3"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>');
+      #result pre code {
+        background-color: transparent;
+        color: inherit;
+        padding: 0;
+        border-radius: 0;
       }
 
-      textarea {
-        margin-top: 0.5rem;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        background: #f8f9fa;
-        font-family: "Consolas", "Courier New", monospace;
-        font-size: 1rem;
-        line-height: 1.6;
-        color: #333;
-        resize: vertical;
-        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-        transition: border-color 0.2s;
+      #result blockquote {
+        padding: 0.5em 1em;
+        background-color: hsla(211, 98%, 50%, 0.08);
+        border-left: 4px solid var(--primary-color);
+        margin: 1em 0;
       }
 
-      textarea:focus {
-        outline: none;
-        border-color: var(--primary-color);
-        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.1);
+      #result table {
+        border-collapse: collapse;
+        margin: 1em auto;
+        overflow: hidden;
+        width: 100%;
+      }
+
+      #result table thead {
+        background-color: #f2f2f2;
+        font-weight: bold;
+      }
+
+      #result table th {
+        color: var(--text-color);
+        font-weight: 600;
+        padding: 0.75em 1em;
+        text-align: left;
+      }
+
+      #result table td {
+        padding: 0.75em 1em;
+        border-top: 1px solid #eee;
+      }
+
+      #result table tr:nth-child(2n) {
+        background-color: #fafafa;
+      }
+
+      #result table tr:hover {
+        background-color: #fafafa;
+      }
+
+      #result ul,
+      #result ol {
+        padding-left: 2em;
+        margin: 0.5em 0;
+      }
+
+      #result li {
+        margin: 0.3em 0;
+      }
+
+      #result hr {
+        border: none;
+        border-top: 1px solid #eee;
+        margin: 2em 0;
+      }
+
+      #result img {
+        display: block;
+        margin: 1em auto;
+        max-width: 100%;
+      }
+
+      :root {
+        --primary-color-hsl: 211, 98%, 50%;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h2>csTimer Analyzer</h2>
+      <div class="header">
+        <div class="header-icon">
+          <i class="fas fa-cube"></i>
+        </div>
+        <h2>csTimer Analyzer</h2>
+      </div>
+
+      <div class="error-message" id="error-message">
+        <i class="fas fa-exclamation-circle"></i> <span id="error-text"></span>
+      </div>
 
       <div class="input-group">
-        <textarea id="options" rows="10" cols="40" placeholder="Options">
+        <div class="options-container">
+          <label class="option-label">
+            <i class="fas fa-cog"></i> Analysis Options
+          </label>
+          <textarea
+            id="options"
+            placeholder="Enter your analysis options here..."
+          >
 Overview
 PbHistory(single)
 PbHistory(ao12)</textarea
-        >
+          >
+        </div>
 
         <div class="right-panel">
-          <div class="file-input">
-            <input type="file" id="file2" accept=".txt" />
-            <label for="file2" id="file2-label">csTimer Data</label>
+          <div class="file-input-container">
+            <label class="option-label">
+              <i class="fas fa-file-import"></i> csTimer Data
+            </label>
+            <div class="file-input">
+              <input type="file" id="file2" accept=".txt" />
+              <div class="file-input-ui">
+                <div class="file-icon">
+                  <i class="fas fa-file-upload"></i>
+                </div>
+                <div class="file-label" id="file2-label">
+                  Your data will not be uploaded.<br />All computations are done
+                  in your browser.
+                </div>
+                <span class="file-hint"></span>
+              </div>
+            </div>
+            <div class="file-selected" id="file-selected">
+              <i class="fas fa-file-alt"></i>
+              <span id="filename-display"></span>
+            </div>
           </div>
-          <button onclick="run()">Analyze</button>
         </div>
       </div>
 
-      <div id="result"></div>
+      <div class="loader" id="loader">
+        <div class="loader-spinner"></div>
+        <p>Analyzing your data...</p>
+      </div>
+
+      <div id="result" style="font-size: large">
+        <strong>Waiting for data file selection...</strong>
+      </div>
     </div>
-
-    <script>
-      document.getElementById("file2").addEventListener("change", function (e) {
-        const file = e.target.files[0];
-        const label = document.getElementById("file2-label");
-        label.textContent = file ? file.name : "csTimer Data";
-      });
-    </script>
-
-    <script>
-      document.getElementById("file2").addEventListener("change", function (e) {
-        updateFileDisplay("file2", "csTimer Data");
-      });
-
-      function updateFileDisplay(fileId, typeName) {
-        const file = document.getElementById(fileId).files[0];
-        const display = document.getElementById(`${fileId}-display`);
-
-        if (file) {
-          display.innerHTML = `
-            <div class="file-icon"></div>
-            <span>
-              <strong>${typeName}:</strong> 
-              <span style="color: #666">${file.name}</span>
-            </span>
-          `;
-        } else {
-          display.innerHTML = `
-            <div class="file-icon"></div>
-            <span><strong>${typeName}:</strong></span>
-          `;
-        }
-      }
-    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script type="module">
       import init, { analyze_from_files } from "./pkg/cstimer_analyzer.js";
+
+      document
+        .getElementById("file2")
+        .addEventListener("change", async function (e) {
+          const file = e.target.files[0];
+          const fileSelected = document.getElementById("file-selected");
+          const filenameDisplay = document.getElementById("filename-display");
+          const label = document.getElementById("file2-label");
+
+          if (file) {
+            filenameDisplay.textContent = file.name;
+            fileSelected.classList.add("active");
+            label.textContent = "File selected";
+            await run();
+          } else {
+            fileSelected.classList.remove("active");
+            label.textContent = "Upload csTimer Data";
+          }
+        });
 
       async function run() {
         await init();
         const optionsText = document.getElementById("options").value;
         const file2 = document.getElementById("file2").files[0];
         const resultDiv = document.getElementById("result");
+        const loader = document.getElementById("loader");
+        const errorMessage = document.getElementById("error-message");
+        const errorText = document.getElementById("error-text");
 
-        if (!optionsText || !file2) {
-          alert("Options and csTimer Data are required!");
+        errorMessage.classList.remove("active");
+
+        if (!optionsText) {
+          errorText.textContent = "Please enter analysis options.";
+          errorMessage.classList.add("active");
           return;
         }
 
+        if (!file2) {
+          errorText.textContent = "Please upload a csTimer data file.";
+          errorMessage.classList.add("active");
+          return;
+        }
+
+        loader.classList.add("active");
+
         const encoder = new TextEncoder();
         const data1 = encoder.encode(optionsText);
-        const data2 = await file2.arrayBuffer();
 
         try {
-          const result = analyze_from_files(
-            new Uint8Array(data1),
-            new Uint8Array(data2)
-          );
-          const md = result;
+          const data2 = await file2.arrayBuffer();
 
-          resultDiv.innerHTML = marked.parse(md);
+          try {
+            const result = analyze_from_files(
+              new Uint8Array(data1),
+              new Uint8Array(data2)
+            );
 
-          const mdDisplay = document.createElement("pre");
-          mdDisplay.textContent = md;
+            resultDiv.innerHTML = marked.parse(result);
+            loader.classList.remove("active");
+
+            resultDiv.scrollIntoView({ behavior: "smooth", block: "start" });
+          } catch (e) {
+            loader.classList.remove("active");
+            errorText.textContent = "Analysis error: " + e.message;
+            errorMessage.classList.add("active");
+          }
         } catch (e) {
-          alert("Error: " + e);
+          loader.classList.remove("active");
+          errorText.textContent = "File reading error: " + e.message;
+          errorMessage.classList.add("active");
         }
       }
-
-      window.run = run;
     </script>
   </body>
 </html>

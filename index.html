@@ -1,49 +1,241 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Analysis Tool</title>
+    <title>csTimer Analyzer</title>
     <style>
+      :root {
+        --primary-color: #2196f3;
+        --hover-color: #1976d2;
+        --background: #f5f5f5;
+      }
+
       body {
-        font-family: sans-serif;
-        margin: 20px;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        margin: 0;
+        padding: 2rem;
+        background-color: var(--background);
+        max-width: 1000px;
+        margin: 0 auto;
       }
-      textarea {
+
+      .container {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      h2 {
+        color: #333;
+        margin: 0 0 2rem 0;
+        font-size: 1.8rem;
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 0.5rem;
+      }
+
+      .input-group {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .file-input {
+        position: relative;
+        flex: 1;
+      }
+
+      .file-input input[type="file"] {
+        opacity: 0;
+        position: absolute;
         width: 100%;
-        height: 300px;
-        margin-top: 10px;
+        height: 100%;
+        cursor: pointer;
       }
-      img {
-        max-width: 100%;
-        margin: 5px 0;
+
+      .file-input label {
+        display: block;
+        padding: 0.8rem 1.2rem;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 6px;
+        text-align: center;
+        transition: background 0.2s;
       }
+
+      .file-input label:hover {
+        background: var(--hover-color);
+      }
+
+      button {
+        padding: 0.8rem 1.5rem;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.2s;
+      }
+
+      button:hover {
+        background: var(--hover-color);
+        transform: translateY(-1px);
+      }
+
+      #result {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #fff;
+        border-radius: 6px;
+        border: 1px solid #eee;
+      }
+
       pre,
       code {
-        font-family: Consolas, monospace;
+        font-family: "Consolas", "Courier New", monospace;
+        background: #f8f8f8;
+        padding: 0.5em;
+        border-radius: 4px;
+      }
+
+      .file-hint {
+        display: block;
+        margin-top: 0.5rem;
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      #result {
+        overflow-x: auto;
+      }
+
+      #result pre,
+      #result code {
+        word-break: break-word;
+        max-width: 100%;
+      }
+
+      .file-display {
+        margin-top: 1rem;
+        padding: 0.8rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border: 1px solid #eee;
+      }
+
+      .file-item {
+        display: flex;
+        align-items: center;
+        margin: 0.5rem 0;
+        color: #444;
+      }
+
+      .file-item span {
+        margin-left: 0.8rem;
+        font-size: 0.9em;
+      }
+
+      .file-icon {
+        width: 20px;
+        height: 20px;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232196F3"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>');
+      }
+
+      textarea {
+        margin-top: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: #f8f9fa;
+        font-family: "Consolas", "Courier New", monospace;
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #333;
+        resize: vertical;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: border-color 0.2s;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.1);
       }
     </style>
   </head>
   <body>
-    <h2>Analysis Tool</h2>
-    <input type="file" id="file1" accept=".txt" />
-    <input type="file" id="file2" accept=".txt" />
-    <button onclick="run()">Analyze</button>
-    <div id="result"></div>
+    <div class="container">
+      <h2>csTimer Analyzer</h2>
+
+      <div class="input-group">
+        <textarea id="options" rows="10" cols="40" placeholder="Options">
+Overview
+PbHistory(single)
+PbHistory(ao12)</textarea
+        >
+
+        <div class="right-panel">
+          <div class="file-input">
+            <input type="file" id="file2" accept=".txt" />
+            <label for="file2" id="file2-label">csTimer Data</label>
+          </div>
+          <button onclick="run()">Analyze</button>
+        </div>
+      </div>
+
+      <div id="result"></div>
+    </div>
+
+    <script>
+      document.getElementById("file2").addEventListener("change", function (e) {
+        const file = e.target.files[0];
+        const label = document.getElementById("file2-label");
+        label.textContent = file ? file.name : "csTimer Data";
+      });
+    </script>
+
+    <script>
+      document.getElementById("file2").addEventListener("change", function (e) {
+        updateFileDisplay("file2", "csTimer Data");
+      });
+
+      function updateFileDisplay(fileId, typeName) {
+        const file = document.getElementById(fileId).files[0];
+        const display = document.getElementById(`${fileId}-display`);
+
+        if (file) {
+          display.innerHTML = `
+            <div class="file-icon"></div>
+            <span>
+              <strong>${typeName}:</strong> 
+              <span style="color: #666">${file.name}</span>
+            </span>
+          `;
+        } else {
+          display.innerHTML = `
+            <div class="file-icon"></div>
+            <span><strong>${typeName}:</strong></span>
+          `;
+        }
+      }
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script type="module">
       import init, { analyze_from_files } from "./pkg/cstimer_analyzer.js";
 
       async function run() {
         await init();
-        const file1 = document.getElementById("file1").files[0];
+        const optionsText = document.getElementById("options").value;
         const file2 = document.getElementById("file2").files[0];
         const resultDiv = document.getElementById("result");
 
-        if (!file1 || !file2) {
-          alert("Please upload two files!");
+        if (!optionsText || !file2) {
+          alert("Options and csTimer Data are required!");
           return;
         }
 
-        const data1 = await file1.arrayBuffer();
+        const encoder = new TextEncoder();
+        const data1 = encoder.encode(optionsText);
         const data2 = await file2.arrayBuffer();
 
         try {
@@ -53,10 +245,8 @@
           );
           const md = result;
 
-          // 清空之前的结果
           resultDiv.innerHTML = marked.parse(md);
 
-          // 显示 Markdown
           const mdDisplay = document.createElement("pre");
           mdDisplay.textContent = md;
         } catch (e) {
@@ -64,7 +254,6 @@
         }
       }
 
-      // 显式暴露到全局作用域
       window.run = run;
     </script>
   </body>

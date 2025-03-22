@@ -429,7 +429,9 @@
           >
 Overview
 PbHistory(single)
-PbHistory(ao12)</textarea
+PbHistory(mo3)
+Grouping(single, 500)
+Trending(ao50)</textarea
           >
         </div>
 
@@ -471,7 +473,7 @@ PbHistory(ao12)</textarea
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script type="module">
-      import init, { analyze_from_files } from "./pkg/cstimer_analyzer.js";
+      import init, { analyze_from_files } from "./pkg/cstimer_analyzer_web.js";
 
       document
         .getElementById("file2")
@@ -500,6 +502,11 @@ PbHistory(ao12)</textarea
         const loader = document.getElementById("loader");
         const errorMessage = document.getElementById("error-message");
         const errorText = document.getElementById("error-text");
+        const canvas = document.createElement("canvas");
+
+        canvas.width = 1440;
+        canvas.height = 810;
+        document.body.appendChild(canvas);
 
         errorMessage.classList.remove("active");
 
@@ -526,13 +533,15 @@ PbHistory(ao12)</textarea
           try {
             const result = analyze_from_files(
               new Uint8Array(data1),
-              new Uint8Array(data2)
+              new Uint8Array(data2),
+              canvas
             );
 
             resultDiv.innerHTML = marked.parse(result);
             loader.classList.remove("active");
-
             resultDiv.scrollIntoView({ behavior: "smooth", block: "start" });
+
+            canvas.remove();
           } catch (e) {
             loader.classList.remove("active");
             errorText.textContent = "Analysis error: " + e.message;

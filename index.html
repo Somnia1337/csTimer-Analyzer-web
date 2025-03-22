@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Analysis Tool</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+      }
+      textarea {
+        width: 100%;
+        height: 300px;
+        margin-top: 10px;
+      }
+      img {
+        max-width: 100%;
+        margin: 5px 0;
+      }
+      pre,
+      code {
+        font-family: Consolas, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Analysis Tool</h2>
+    <input type="file" id="file1" accept=".txt" />
+    <input type="file" id="file2" accept=".txt" />
+    <button onclick="run()">Analyze</button>
+    <div id="result"></div>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+      import init, { analyze_from_files } from "./pkg/cstimer_analyzer.js";
+
+      async function run() {
+        await init();
+        const file1 = document.getElementById("file1").files[0];
+        const file2 = document.getElementById("file2").files[0];
+        const resultDiv = document.getElementById("result");
+
+        if (!file1 || !file2) {
+          alert("Please upload two files!");
+          return;
+        }
+
+        const data1 = await file1.arrayBuffer();
+        const data2 = await file2.arrayBuffer();
+
+        try {
+          const result = analyze_from_files(
+            new Uint8Array(data1),
+            new Uint8Array(data2)
+          );
+          const md = result;
+
+          // 清空之前的结果
+          resultDiv.innerHTML = marked.parse(md);
+
+          // 显示 Markdown
+          const mdDisplay = document.createElement("pre");
+          mdDisplay.textContent = md;
+        } catch (e) {
+          alert("Error: " + e);
+        }
+      }
+
+      // 显式暴露到全局作用域
+      window.run = run;
+    </script>
+  </body>
+</html>

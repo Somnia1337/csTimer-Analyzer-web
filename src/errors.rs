@@ -2,29 +2,6 @@ use std::fmt;
 use std::num::ParseIntError;
 
 /// An error which can be returned
-/// when matching the data file.
-pub enum DataFileMatchError {
-    /// Data file not found.
-    NotFound,
-
-    /// More than one valid data files.
-    Duplicate,
-}
-
-impl fmt::Display for DataFileMatchError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let literal = match self {
-            Self::NotFound => {
-                "data file not found, which should be \"cstimer_YYYYMMDD_hhmmss.txt\""
-            }
-            Self::Duplicate => "found multiple data files",
-        };
-
-        write!(f, "{}", literal)
-    }
-}
-
-/// An error which can be returned
 /// when parsing a `StatsType`.
 pub enum ParseStatsError {
     /// Unknown format

@@ -41,14 +41,19 @@ fn append_session_title<W: Write>(writer: &mut W, session: &Session) -> io::Resu
     writeln!(writer, "### {}\n", session)
 }
 
-/// Appends an image link.
-fn _append_image_link<W: Write>(writer: &mut W, image_name: String) -> io::Result<()> {
-    writeln!(writer, "![](images/{})\n", image_name)
-}
-
 /// Appends a quote.
 fn append_message<W: Write>(writer: &mut W, callout_type: &str, content: String) -> io::Result<()> {
     writeln!(writer, "> **{}**: {}", callout_type, content)
+}
+
+/// Appends an image data url.
+fn append_image_url<W: Write>(writer: &mut W, url: &str) -> io::Result<()> {
+    writeln!(writer, "![Generated Chart]({})\n", url)
+}
+
+/// Converts canvas to data url.
+fn canvas_to_data_url(canvas: &HtmlCanvasElement) -> String {
+    canvas.to_data_url().unwrap_or_else(|_| String::from(""))
 }
 
 /// Appends an analysis section.
@@ -188,16 +193,6 @@ fn append_section<W: Write>(
             Ok(())
         }
     }
-}
-
-/// Converts canvas to data url.
-fn canvas_to_data_url(canvas: &HtmlCanvasElement) -> String {
-    canvas.to_data_url().unwrap_or_else(|_| String::from(""))
-}
-
-/// Appends an image data url.
-fn append_image_url<W: Write>(writer: &mut W, url: &str) -> io::Result<()> {
-    writeln!(writer, "![Generated Chart]({})\n", url)
 }
 
 /// Analyzes each session, using parsed options.

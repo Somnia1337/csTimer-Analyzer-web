@@ -135,7 +135,7 @@ fn append_section<W: Write>(
             )?;
 
             if let Some(groups) = session.try_group_by_interval(*interval) {
-                match session.draw_group_by_interval(canvas, *interval, groups) {
+                match session.draw_group_by_interval(canvas, groups, *interval) {
                     Ok(()) => {
                         let data_url = canvas_to_data_url(canvas);
                         append_image_url(writer, &data_url)
@@ -158,7 +158,9 @@ fn append_section<W: Write>(
         Analyze::Trending(stats_type) => {
             writeln!(writer, "**{}** Trending\n", stats_type)?;
             if let Some(data) = session.trend(stats_type) {
-                match session.draw_trending(canvas, data) {
+                let desc = stats_type.to_string();
+
+                match session.draw_trending(canvas, data, &desc) {
                     Ok(()) => {
                         let data_url = canvas_to_data_url(canvas);
                         append_image_url(writer, &data_url)

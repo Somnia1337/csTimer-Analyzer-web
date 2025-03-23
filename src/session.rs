@@ -284,8 +284,8 @@ impl Session {
     pub fn draw_group_by_interval(
         &self,
         canvas: &HtmlCanvasElement,
-        interval: Milliseconds,
         groups: Vec<GroupRecord>,
+        interval: Milliseconds,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let count_max = groups
             .iter()
@@ -295,35 +295,39 @@ impl Session {
         let bounds = self.time_bounds();
         let (secs_min, secs_max) = (bounds.0 / 1000, bounds.1 / 1000);
 
-        let backend = CanvasBackend::with_canvas_object(canvas.clone())
-            .ok_or("Failed to acquire canvas backend")?;
-        let root = backend.into_drawing_area();
+        let root = CanvasBackend::with_canvas_object(canvas.clone())
+            .ok_or("Failed to acquire canvas backend")?
+            .into_drawing_area();
         root.fill(&WHITE)?;
 
-        let caption = format!("Group by {}ms", interval);
+        let caption = format!(
+            "Session {} grouping by {}s",
+            self.id,
+            interval as f32 / 1000.0
+        );
 
         let mut chart = ChartBuilder::on(&root)
-            .caption(caption, ("Consolas", 32).into_font())
-            .margin(40)
-            .x_label_area_size(80)
-            .y_label_area_size(100)
+            .caption(caption, ("Consolas", 48).into_font())
+            .margin(20)
+            .x_label_area_size(160)
+            .y_label_area_size(160)
             .build_cartesian_2d(
                 (secs_min - 1) as f32..(secs_max + 1) as f32,
                 0u32..(count_max as f32 * 1.1) as u32,
             )?;
 
+        chart
+            .configure_mesh()
+            .label_style(("Consolas", 32).into_font())
+            .axis_desc_style(("Consolas", 40).into_font())
+            .x_desc("Range / sec")
+            .y_desc("Count")
+            .draw()?;
+
         let coords: Vec<(f32, u32)> = groups
             .iter()
             .map(|g| (g.interval() as f32, g.records().len() as u32))
             .collect();
-
-        chart
-            .configure_mesh()
-            .label_style(("Consolas", 18).into_font())
-            .axis_desc_style(("Consolas", 28).into_font())
-            .x_desc("Count")
-            .y_desc("Range / sec")
-            .draw()?;
 
         chart.draw_series(coords.iter().map(|(x, y)| {
             let x0 = { *x } / 1000.0;
@@ -334,6 +338,8 @@ impl Session {
             Rectangle::new([(x0, y0), (x1, y1)], RGBColor(91, 169, 253).filled())
         }))?;
 
+        root.present()?;
+
         Ok(())
     }
 
@@ -342,28 +348,29 @@ impl Session {
         &self,
         canvas: &HtmlCanvasElement,
         data: Vec<i32>,
+        desc: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let n = data.len();
         let max = data.iter().max().unwrap();
 
-        let backend = CanvasBackend::with_canvas_object(canvas.clone())
-            .ok_or("Failed to acquire canvas backend")?;
-        let root = backend.into_drawing_area();
+        let root = CanvasBackend::with_canvas_object(canvas.clone())
+            .ok_or("Failed to acquire canvas backend")?
+            .into_drawing_area();
         root.fill(&WHITE)?;
 
-        let caption = format!("{} plots", n);
+        let caption = format!("Session {} {} trending ({} plots)", self.id, desc, n);
 
         let mut chart = ChartBuilder::on(&root)
-            .caption(&caption, ("Consolas", 32).into_font())
-            .margin(40)
-            .x_label_area_size(80)
-            .y_label_area_size(100)
+            .caption(&caption, ("Consolas", 48).into_font())
+            .margin(20)
+            .x_label_area_size(160)
+            .y_label_area_size(160)
             .build_cartesian_2d(0..n, 0.0..*max as f32 * 1.1 / 1000.0)?;
 
         chart
             .configure_mesh()
-            .label_style(("Consolas", 18).into_font())
-            .axis_desc_style(("Consolas", 28).into_font())
+            .label_style(("Consolas", 32).into_font())
+            .axis_desc_style(("Consolas", 40).into_font())
             .x_desc("Stats Number")
             .y_desc("Time / secs")
             .draw()?;

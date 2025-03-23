@@ -22,8 +22,7 @@ pub fn analyze_from_files(
         .map_err(|e| JsValue::from_str(&format!("Failed to parse data: {}", e)))?;
 
     // Reads and parses options
-    let options = sanitize_options(options);
-    let (options, _) = parse_options(options);
+    let options = parse_options(options);
 
     // Splits sessions
     let sessions = split_sessions(&data);

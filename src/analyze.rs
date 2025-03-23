@@ -46,8 +46,7 @@ fn _append_image_link<W: Write>(writer: &mut W, image_name: String) -> io::Resul
     writeln!(writer, "![](images/{})\n", image_name)
 }
 
-/// Appends a callout if Obsidian flavor is enabled,
-/// or a quote if disabled.
+/// Appends a quote.
 fn append_message<W: Write>(writer: &mut W, callout_type: &str, content: String) -> io::Result<()> {
     writeln!(writer, "> **{}**: {}", callout_type, content)
 }

@@ -45,8 +45,8 @@ PbHistory(mo5)
 PbHistory(ao50)
 
 # Grouping histograms
-Grouping(single, 500)
-Grouping(single, 1000)
+Grouping(single, 500)  # 500ms
+Grouping(single, 1000) # 1000ms
 
 # Trending charts
 Trending(mo5)

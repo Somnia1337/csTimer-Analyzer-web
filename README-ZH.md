@@ -45,8 +45,8 @@ PbHistory(mo5)
 PbHistory(ao50)
 
 # 直方图
-Grouping(single, 500)
-Grouping(single, 1000)
+Grouping(single, 500)  # 500ms
+Grouping(single, 1000) # 1000ms
 
 # 趋势图
 Trending(mo5)

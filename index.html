@@ -230,6 +230,13 @@
         flex-direction: column;
       }
 
+      .option-header {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        margin-bottom: 0.5rem;
+      }
+
       .option-label {
         font-weight: 600;
         margin-bottom: 0.5rem;
@@ -248,12 +255,12 @@
         border: none;
         border-radius: 4px;
         padding: 0.3rem 0.6rem;
-        margin-top: 0.1rem;
-        margin-left: 0.8rem;
+        margin-bottom: 0.4rem;
         font-size: 0.8rem;
         cursor: pointer;
         transition: var(--transition);
         flex-shrink: 0;
+        white-space: nowrap;
       }
 
       .example-button:hover {
@@ -477,6 +484,15 @@
         }
       }
 
+      body.loading {
+        cursor: default !important;
+      }
+
+      body.loading * {
+        cursor: default !important;
+        pointer-events: none !important;
+      }
+
       #result {
         margin-top: 2rem;
         padding: 2rem;
@@ -695,12 +711,14 @@ Commented</textarea
 
         <div class="right-panel">
           <div class="file-input-container">
-            <label class="option-label">
-              <i class="fas fa-file-import"></i> csTimer Data
+            <div class="option-header">
+              <label class="option-label">
+                <i class="fas fa-file-import"></i> csTimer Data
+              </label>
               <button id="use-example" class="example-button">
                 use example file
               </button>
-            </label>
+            </div>
             <div class="file-input">
               <input type="file" id="file2" accept=".txt" />
               <div class="file-input-ui">
@@ -939,6 +957,7 @@ Commented</textarea
         });
 
       async function run() {
+        document.body.classList.add("loading");
         await init();
         const optionsText = document.getElementById("options").value;
         const file2 = document.getElementById("file2").files[0];
@@ -960,6 +979,7 @@ Commented</textarea
           errorText.textContent = "Please enter analysis options.";
           errorMessage.classList.add("active");
           canvas.remove();
+          document.body.classList.remove("loading");
           return;
         }
 
@@ -967,6 +987,7 @@ Commented</textarea
           errorText.textContent = "Please upload a csTimer data file.";
           errorMessage.classList.add("active");
           canvas.remove();
+          document.body.classList.remove("loading");
           return;
         }
 
@@ -1001,6 +1022,8 @@ Commented</textarea
           errorText.textContent = "File reading error: " + e.message;
           errorMessage.classList.add("active");
           canvas.remove();
+        } finally {
+          document.body.classList.remove("loading");
         }
       }
 

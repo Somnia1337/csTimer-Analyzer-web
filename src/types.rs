@@ -28,6 +28,11 @@ pub trait TimeReadable {
 impl TimeReadable for Milliseconds {
     fn readable(&self) -> String {
         let t = *self;
+
+        if t < SEC {
+            return format!("0.{:03}", t);
+        }
+
         let secs_and_millis = format!("{:02}.{:03}", (t % MIN) / SEC, t % SEC);
 
         if t < MIN {

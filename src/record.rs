@@ -63,12 +63,12 @@ impl fmt::Display for Record {
         let comment = if self.comment.is_empty() {
             String::new()
         } else {
-            format!("- comment: *{}*\n", self.comment)
+            format!("- comment: **{}**\n", self.comment)
         };
 
         write!(
             f,
-            "@{}\n\n{}- time: `{}`\n- scramble: **{}**\n{}",
+            "@{}\n\n{}- time: `{}`\n- scramble: *{}*\n{}",
             self.date_time(),
             solve_state,
             self.time.readable(),

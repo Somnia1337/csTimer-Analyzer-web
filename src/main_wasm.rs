@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
 use crate::analyze::*;
-use crate::files::*;
+use crate::json::*;
 use crate::options::*;
 
 #[wasm_bindgen]

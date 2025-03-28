@@ -9,7 +9,7 @@ use crate::types::*;
 /// and the parsed options.
 fn append_analysis_info<W: Write>(
     writer: &mut W,
-    session_count: usize,
+    sessions: &[Session],
     record_count: usize,
     options: &[Analyze],
 ) -> io::Result<()> {
@@ -17,8 +17,21 @@ fn append_analysis_info<W: Write>(
     writeln!(
         writer,
         "Parsed `{}` sessions (`{}` records).\n",
-        session_count, record_count
+        sessions.len(),
+        record_count
     )?;
+
+    for session in sessions {
+        writeln!(
+            writer,
+            "- [#[{}] {} (`{}` records)](#session-{})",
+            session.rank(),
+            session.name(),
+            session.records().len(),
+            session.rank(),
+        )?;
+    }
+    writeln!(writer)?;
 
     writeln!(writer, "### Analysis Options\n")?;
     writeln!(
@@ -31,14 +44,23 @@ fn append_analysis_info<W: Write>(
     }
     writeln!(writer)?;
 
-    // append_page_breaker(writer)?;
-
     Ok(())
 }
 
 /// Appends session as a title.
 fn append_session_title<W: Write>(writer: &mut W, session: &Session) -> io::Result<()> {
-    writeln!(writer, "### {}\n", session)
+    writeln!(
+        writer,
+        "### <a id=\"session-{}\"></a>{}\n",
+        session.rank(),
+        session,
+    )
+}
+
+/// Appends the start and end date_times of a session.
+fn append_session_date_time<W: Write>(writer: &mut W, session: &Session) -> io::Result<()> {
+    let (start, end) = session.date_time();
+    writeln!(writer, "{} ~ {}\n", start, end)
 }
 
 /// Appends a quote.
@@ -74,7 +96,6 @@ fn append_section<W: Write>(
 | `{}` | `{}` | `{}` | `{}` |"#,
                 best, worst, mean, average,
             );
-
             let (ok, plus2, dnf) = session.solve_states();
             let total = session.records().len() as f64;
             let solve_states = format!(
@@ -87,7 +108,6 @@ fn append_section<W: Write>(
                 dnf,
                 (dnf * 100) as f64 / total
             );
-
             writeln!(writer, "Overview\n\n{}\n\n{}\n", overview, solve_states)
         }
 
@@ -104,8 +124,14 @@ fn append_section<W: Write>(
                     writeln!(writer, "```\n{}\n```\n", pb_history)?;
 
                     if matches!(stats_type, StatsType::Single) {
-                        for pair in &pairs {
-                            writeln!(writer, "\\[#{}] {}", pair.0, pair.2)?;
+                        writeln!(writer, "[#{}] {}", pairs[0].0, pairs[0].2)?;
+
+                        if pairs.len() > 1 {
+                            writeln!(writer, "<details>\n<summary>Expand</summary>\n")?;
+                            for pair in pairs.iter().skip(1) {
+                                writeln!(writer, "[#{}] {}", pair.0, pair.2)?;
+                            }
+                            writeln!(writer, "</details>\n")?;
                         }
                     }
 
@@ -134,8 +160,8 @@ fn append_section<W: Write>(
                 *interval as f32 / 1000.0
             )?;
 
-            if let Some(groups) = session.try_group_by_interval(*interval) {
-                match session.draw_group_by_interval(canvas, groups, *interval) {
+            if let Some(groups) = session.try_grouping(*interval) {
+                match session.draw_grouping(canvas, groups, *interval) {
                     Ok(()) => {
                         let data_url = canvas_to_data_url(canvas);
                         append_image_url(writer, &data_url)
@@ -185,8 +211,14 @@ fn append_section<W: Write>(
 
             let commented = session.commented_records();
             if !commented.is_empty() {
-                for (i, r) in commented {
-                    writeln!(writer, "\\[#{}] {}", i, r)?;
+                writeln!(writer, "[#{}] {}", commented[0].0, commented[0].1)?;
+
+                if commented.len() > 1 {
+                    writeln!(writer, "<details>\n<summary>Expand</summary>\n")?;
+                    for (i, r) in commented.iter().skip(1) {
+                        writeln!(writer, "[#{}] {}", i, r)?;
+                    }
+                    writeln!(writer, "</details>\n")?;
                 }
             } else {
                 append_message(writer, "error", String::from("NO COMMENTED RECORD."))?;
@@ -199,20 +231,21 @@ fn append_section<W: Write>(
 
 /// Analyzes each session, using parsed options.
 pub fn analyze<W: Write>(
-    sessions: &Vec<Session>,
+    sessions: &[Session],
     options: &[Analyze],
     writer: &mut W,
     canvas: HtmlCanvasElement,
 ) -> io::Result<()> {
     append_analysis_info(
         writer,
-        sessions.len(),
+        sessions,
         sessions.iter().map(|s| s.records().len()).sum::<usize>(),
         options,
     )?;
 
     for session in sessions {
         append_session_title(writer, session)?;
+        append_session_date_time(writer, session)?;
 
         for a_type in options {
             append_section(writer, session, a_type, &canvas)?;

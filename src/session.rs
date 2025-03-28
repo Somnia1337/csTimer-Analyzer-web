@@ -1,6 +1,7 @@
 use std::fmt;
 use std::rc::Rc;
 
+use chrono::DateTime;
 use plotters::prelude::*;
 use plotters_canvas::CanvasBackend;
 use web_sys::HtmlCanvasElement;
@@ -11,13 +12,15 @@ use crate::types::*;
 /// A training session, same as the "session" in csTimer.
 #[derive(Debug, Clone)]
 pub struct Session {
-    id: u8,
+    rank: usize,
+    name: String,
+    date_time: (i64, i64),
     records: Vec<Rc<Record>>,
     non_dnf_records: Vec<Rc<Record>>,
 }
 
 impl Session {
-    pub fn new(id: u8, records: &[Record]) -> Self {
+    pub fn new(rank: usize, name: String, date_time: (i64, i64), records: &[Record]) -> Self {
         let records: Vec<Rc<Record>> = records.iter().cloned().map(Rc::new).collect();
         let non_dnf_records = records
             .iter()
@@ -26,13 +29,15 @@ impl Session {
             .collect();
 
         Self {
-            id,
+            rank,
+            name,
+            date_time,
             records,
             non_dnf_records,
         }
     }
 
-    pub fn from(id: u8, records: &[Rc<Record>]) -> Self {
+    pub fn from(rank: usize, name: String, date_time: (i64, i64), records: &[Rc<Record>]) -> Self {
         let records = records.to_vec();
         let non_dnf_records = records
             .iter()
@@ -41,14 +46,27 @@ impl Session {
             .collect();
 
         Self {
-            id,
+            rank,
+            name,
+            date_time,
             records,
             non_dnf_records,
         }
     }
 
-    pub fn id(&self) -> u8 {
-        self.id
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn rank(&self) -> usize {
+        self.rank
+    }
+
+    pub fn date_time(&self) -> (DateTime<chrono::Utc>, DateTime<chrono::Utc>) {
+        (
+            DateTime::from_timestamp(self.date_time.0, 0).expect("time goes backwards"),
+            DateTime::from_timestamp(self.date_time.1, 0).expect("time goes backwards"),
+        )
     }
 
     pub fn records(&self) -> &[Rc<Record>] {
@@ -62,7 +80,13 @@ impl Session {
 
 impl fmt::Display for Session {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Session {} ({} records)", self.id, self.records.len())
+        writeln!(
+            f,
+            "[#{}] {} (`{}` records)",
+            self.rank(),
+            self.name(),
+            self.records().len(),
+        )
     }
 }
 
@@ -83,7 +107,7 @@ impl Session {
     fn time_bounds(&self) -> (Milliseconds, Milliseconds) {
         let (best, worst) = self.best_and_worst();
 
-        ((best / 1000 - 1) * 1000, (worst / 1000 + 1) * 1000)
+        (((best / 1000).max(1) - 1) * 1000, (worst / 1000 + 1) * 1000)
     }
 
     /// Mean of non-DNF solve times.
@@ -135,11 +159,12 @@ impl Session {
             }
 
             StatsType::Average(s_scale) => {
-                let chunk = &self.records[pos + 1 - s_scale..=pos];
+                let chunk = &self.records[(pos + 1).saturating_sub(*s_scale)..=pos];
                 let cut_off = (*s_scale as f32 * 0.05).ceil() as usize;
-                let take = s_scale - cut_off * 2;
+                let take = s_scale.saturating_sub(cut_off * 2);
 
-                if chunk.iter().filter(|r| r.solve_state().is_dnf()).count() > cut_off {
+                if take == 0 || chunk.iter().filter(|r| r.solve_state().is_dnf()).count() > cut_off
+                {
                     None
                 } else {
                     let mut chunk: Vec<Milliseconds> = chunk
@@ -166,7 +191,7 @@ impl Session {
     /// Splits records into groups, by a fixed interval.
     /// Returns `None` if the given interval is not divisible
     /// by 1000, nor 1000 is divisible by it.
-    pub fn try_group_by_interval(&self, interval: Milliseconds) -> Option<Vec<GroupRecord>> {
+    pub fn try_grouping(&self, interval: Milliseconds) -> Option<Vec<GroupRecord>> {
         if !(interval != 0 && (1000 % interval == 0 || interval % 1000 == 0)) {
             return None;
         }
@@ -281,16 +306,17 @@ impl Session {
     }
 
     /// Draws a png, visualizes grouping results.
-    pub fn draw_group_by_interval(
+    pub fn draw_grouping(
         &self,
         canvas: &HtmlCanvasElement,
         groups: Vec<GroupRecord>,
         interval: Milliseconds,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let count_max = groups
-            .iter()
-            .map(|g| g.records().len())
-            .fold(usize::MIN, |max, count| (max.max(count)));
+        let count_max = groups.iter().map(|g| g.records().len()).max().unwrap_or(0);
+
+        if count_max == 0 {
+            return Err(Box::from("all groups are empty"));
+        }
 
         let bounds = self.time_bounds();
         let (secs_min, secs_max) = (bounds.0 / 1000, bounds.1 / 1000);
@@ -301,8 +327,9 @@ impl Session {
         root.fill(&WHITE)?;
 
         let caption = format!(
-            "Session {} grouping by {}s",
-            self.id,
+            "[#{}] {} grouping (by {}s)",
+            self.rank,
+            self.name,
             interval as f32 / 1000.0
         );
 
@@ -312,7 +339,7 @@ impl Session {
             .x_label_area_size(160)
             .y_label_area_size(160)
             .build_cartesian_2d(
-                (secs_min - 1) as f32..(secs_max + 1) as f32,
+                (secs_min.max(1) - 1) as f32..(secs_max + 1) as f32,
                 0u32..(count_max as f32 * 1.1) as u32,
             )?;
 
@@ -320,8 +347,9 @@ impl Session {
             .configure_mesh()
             .label_style(("Consolas", 32).into_font())
             .axis_desc_style(("Consolas", 40).into_font())
-            .x_desc("Range / sec")
+            .x_desc("Range / time")
             .y_desc("Count")
+            .x_label_formatter(&Seconds::readable)
             .draw()?;
 
         let coords: Vec<(f32, u32)> = groups
@@ -358,7 +386,10 @@ impl Session {
             .into_drawing_area();
         root.fill(&WHITE)?;
 
-        let caption = format!("Session {} {} trending ({} plots)", self.id, desc, n);
+        let caption = format!(
+            "[#{}] {} {} trending ({} plots)",
+            self.rank, self.name, desc, n
+        );
 
         let mut chart = ChartBuilder::on(&root)
             .caption(&caption, ("Consolas", 48).into_font())
@@ -372,7 +403,7 @@ impl Session {
             .label_style(("Consolas", 32).into_font())
             .axis_desc_style(("Consolas", 40).into_font())
             .x_desc("Stats Number")
-            .y_desc("Time / secs")
+            .y_label_formatter(&Seconds::readable)
             .draw()?;
 
         chart.draw_series(LineSeries::new(

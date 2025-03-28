@@ -51,16 +51,17 @@ pub fn extract_records(session: &Value) -> Option<Vec<Record>> {
         .unwrap()
         .iter()
         .map(|r| {
-            let solve_state = match r.get(0)?.get(0)?.as_i64()? {
+            let mut solve_state = match r.get(0)?.get(0)?.as_i64()? {
                 0 => SolveState::Ok,
                 2000 => SolveState::Plus2,
                 -1 => SolveState::Dnf,
                 _ => return None,
             };
 
-            let mut time_millis = r.get(0)?.get(1)?.as_i64()? as i32;
+            let mut time_millis = r.get(0)?.get(1)?.as_i64()?;
             if time_millis < 0 {
-                time_millis = 0;
+                time_millis = -time_millis;
+                solve_state = SolveState::Dnf;
             } else if solve_state.is_plus2() {
                 time_millis += 2000;
             }

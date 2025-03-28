@@ -31,6 +31,8 @@ impl TimeReadable for Milliseconds {
 
         if t < SEC {
             return format!("0.{:03}", t);
+        } else if t < SEC * 10 {
+            return format!("{}.{:03}", t / SEC, t % SEC);
         }
 
         let secs_and_millis = format!("{:02}.{:03}", (t % MIN) / SEC, t % SEC);

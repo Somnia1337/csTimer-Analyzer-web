@@ -948,6 +948,8 @@ Commented</textarea
         const errorText = document.getElementById("error-text");
         const canvas = document.createElement("canvas");
 
+        // Set canvas to be hidden and not affect layout
+        canvas.style.display = "none";
         canvas.width = 1920;
         canvas.height = 1080;
         document.body.appendChild(canvas);
@@ -957,12 +959,14 @@ Commented</textarea
         if (!optionsText) {
           errorText.textContent = "Please enter analysis options.";
           errorMessage.classList.add("active");
+          canvas.remove();
           return;
         }
 
         if (!file2) {
           errorText.textContent = "Please upload a csTimer data file.";
           errorMessage.classList.add("active");
+          canvas.remove();
           return;
         }
 
@@ -990,11 +994,13 @@ Commented</textarea
             loader.classList.remove("active");
             errorText.textContent = "Analysis error: " + e.message;
             errorMessage.classList.add("active");
+            canvas.remove();
           }
         } catch (e) {
           loader.classList.remove("active");
           errorText.textContent = "File reading error: " + e.message;
           errorMessage.classList.add("active");
+          canvas.remove();
         }
       }
 

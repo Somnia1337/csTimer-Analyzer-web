@@ -71,6 +71,7 @@ pub fn extract_records(session: &Value) -> Option<Vec<Record>> {
                 .get(2)?
                 .as_str()?
                 .to_string()
+                .trim()
                 .replace("\\\"", "\"")
                 .replace("\\\\", "\\");
             let time_epoch = r.get(3)?.as_i64()?;

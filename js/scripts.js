@@ -50,10 +50,7 @@ function initializeModalHandlers() {
   });
 
   async function loadReadme(lang) {
-    const readmeUrl =
-      lang === "zh"
-        ? "https://raw.githubusercontent.com/Somnia1337/csTimer-Analyzer-web/main/README-ZH.md"
-        : "https://raw.githubusercontent.com/Somnia1337/csTimer-Analyzer-web/main/README.md";
+    const readmeUrl = lang === "zh" ? "./README-ZH.md" : "./README.md";
 
     try {
       readmeContent.innerHTML =
@@ -82,9 +79,7 @@ function initializeExampleButton() {
     try {
       label.textContent = "Loading example file...";
 
-      const response = await fetch(
-        "https://raw.githubusercontent.com/Somnia1337/csTimer-Analyzer-web/main/example.txt"
-      );
+      const response = await fetch("./example.txt");
 
       if (!response.ok) {
         throw new Error(`Failed to load example file: ${response.status}`);

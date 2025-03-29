@@ -1,6 +1,6 @@
 English | [中文](https://github.com/Somnia1337/csTimer-Analyzer-web/blob/main/README-ZH.md)
 
-## [csTimer-Analyzer-web](https://github.com/Somnia1337/csTimer-Analyzer-web)
+## [csTimer-Analyzer-web](https://somnia1337.github.io/csTimer-Analyzer-web/)
 
 The web app for [csTimer-Analyzer](https://github.com/Somnia1337/csTimer-Analyzer), leveraging the power of [WebAssembly](https://developer.mozilla.org/en-US/docs/WebAssembly) and the [Rust](https://www.rust-lang.org) toolchain.
 
@@ -14,7 +14,7 @@ Features:
 ### Usage
 
 1. Go to [csTimer](https://www.cstimer.net/), click on the "EXPORT" button, then click "Export to file". A data file named `cstimer_YYYYMMDD_hhmmss.txt` should be downloaded.
-2. Open[csTimer-Analyzer](https://github.com/Somnia1337/csTimer-Analyzer), write your analysis options in the textarea, see below for configuration tutorials.
+2. Open [csTimer-Analyzer-web](https://somnia1337.github.io/csTimer-Analyzer-web/), write your analysis options in the textarea, see below for configuration tutorials.
 3. Press the upload button and choose the data file you just downloaded, your browser should begin analyzing automatically and show the report afterwards.
 
 ### Analysis Options

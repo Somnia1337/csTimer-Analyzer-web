@@ -27,7 +27,7 @@ async function run() {
   }
 
   if (!file2) {
-    errorText.textContent = "Please upload a csTimer data file.";
+    errorText.textContent = "Please select a csTimer data file.";
     errorMessage.classList.add("active");
     canvas.remove();
     document.body.classList.remove("loading");
@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
         await run();
       } else {
         fileSelected.classList.remove("active");
-        label.textContent = "Upload csTimer Data";
+        label.textContent = "Select csTimer Data";
       }
     });
 });

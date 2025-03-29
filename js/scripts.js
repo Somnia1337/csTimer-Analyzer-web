@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initializeModalHandlers();
   initializeExampleButton();
   initializeFeedbackForm();
-  initializeFileUpload();
+  initializeFileSelection();
 });
 
 function initializeModalHandlers() {
@@ -162,7 +162,7 @@ function initializeFeedbackForm() {
   });
 }
 
-function initializeFileUpload() {
+function initializeFileSelection() {
   document.getElementById("file2").addEventListener("change", function (e) {
     const file = e.target.files[0];
     const fileSelected = document.getElementById("file-selected");
@@ -176,7 +176,7 @@ function initializeFileUpload() {
       run();
     } else {
       fileSelected.classList.remove("active");
-      label.textContent = "Upload csTimer Data";
+      label.textContent = "Select csTimer Data";
     }
   });
 }

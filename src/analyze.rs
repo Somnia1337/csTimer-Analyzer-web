@@ -161,7 +161,9 @@ fn append_section<W: Write>(
             )?;
 
             if let Some(groups) = session.try_grouping(*interval) {
-                match session.draw_grouping(canvas, groups, *interval) {
+                let desc = stats_type.to_string();
+
+                match session.draw_grouping(canvas, groups, *interval, &desc) {
                     Ok(()) => {
                         let data_url = canvas_to_data_url(canvas);
                         append_image_url(writer, &data_url)

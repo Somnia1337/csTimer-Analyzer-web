@@ -311,6 +311,7 @@ impl Session {
         canvas: &HtmlCanvasElement,
         groups: Vec<GroupRecord>,
         interval: Milliseconds,
+        desc: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let count_max = groups.iter().map(|g| g.records().len()).max().unwrap_or(0);
 
@@ -327,9 +328,10 @@ impl Session {
         root.fill(&WHITE)?;
 
         let caption = format!(
-            "[#{}] {} grouping (by {}s)",
+            "[#{}] {} {} grouping (by {}s)",
             self.rank,
             self.name,
+            desc,
             interval as f32 / 1000.0
         );
 

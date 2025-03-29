@@ -9,8 +9,6 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link rel="icon" href="./assets/favicon.ico" type="image/x-icon" />
-    <link rel="shortcut icon" href="./assets/favicon.ico" type="image/x-icon" />
-    <script src="https://smtpjs.com/v3/smtp.js"></script>
     <style>
       :root {
         --primary-color: #377dfc;
@@ -22,6 +20,7 @@
         --border-radius: 12px;
         --shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
         --transition: all 0.3s ease;
+        --primary-color-hsl: 211, 98%, 50%;
       }
 
       * {
@@ -40,6 +39,15 @@
         padding: 2rem;
       }
 
+      body.loading {
+        cursor: default !important;
+      }
+
+      body.loading * {
+        cursor: default !important;
+        pointer-events: none !important;
+      }
+
       .container {
         max-width: 1000px;
         margin: 0 auto;
@@ -49,21 +57,17 @@
         box-shadow: var(--shadow);
       }
 
+      /* Header styles */
       .header {
         display: flex;
         align-items: center;
         margin-bottom: 2rem;
       }
 
-      .github-link {
-        margin-left: auto;
-        font-size: 1.8rem;
+      .header-icon {
+        font-size: 2rem;
         color: var(--primary-color);
-        transition: var(--transition);
-      }
-
-      .github-link:hover {
-        color: var(--accent-color);
+        margin-right: 1rem;
       }
 
       .header-actions {
@@ -72,112 +76,33 @@
         margin-left: auto;
       }
 
-      .info-button {
+      h2 {
+        color: var(--primary-color);
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin: 0;
+        position: relative;
+      }
+
+      .info-button,
+      .github-link {
         background: none;
         border: none;
         cursor: pointer;
         font-size: 1.8rem;
         color: var(--primary-color);
+        transition: var(--transition);
+      }
+
+      .info-button {
         margin-right: 1rem;
         margin-top: 0.3rem;
-        transition: var(--transition);
         padding: 0;
       }
 
-      .info-button:hover {
-        color: var(--accent-color);
-      }
-
-      .github-link {
-        font-size: 1.8rem;
-        color: var(--primary-color);
-        transition: var(--transition);
-      }
-
+      .info-button:hover,
       .github-link:hover {
         color: var(--accent-color);
-      }
-
-      .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 100;
-        justify-content: center;
-        align-items: center;
-      }
-
-      .modal.active {
-        display: flex;
-        animation: fadeIn 0.3s;
-      }
-
-      .modal-content {
-        background-color: var(--card-bg);
-        border-radius: var(--border-radius);
-        width: 80%;
-        max-width: 800px;
-        max-height: 80vh;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-        display: flex;
-        flex-direction: column;
-      }
-
-      .modal-header {
-        display: flex;
-        align-items: center;
-        padding: 1.5rem;
-        border-bottom: 1px solid #eee;
-      }
-
-      .modal-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--primary-color);
-      }
-
-      .modal-controls {
-        margin-left: auto;
-        display: flex;
-        align-items: center;
-      }
-
-      .lang-toggle {
-        background-color: var(--primary-color);
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 0.5rem 1rem;
-        margin-right: 1rem;
-        cursor: pointer;
-        font-size: 0.9rem;
-        transition: var(--transition);
-      }
-
-      .lang-toggle:hover {
-        background-color: var(--secondary-color);
-      }
-
-      .close-modal {
-        background: none;
-        border: none;
-        font-size: 1.8rem;
-        cursor: pointer;
-        color: #666;
-        transition: var(--transition);
-      }
-
-      .close-modal:hover {
-        color: var(--accent-color);
-      }
-
-      .modal-body {
-        padding: 1.5rem;
-        overflow-y: auto;
       }
 
       .cstimer-link {
@@ -198,20 +123,7 @@
         transform: scale(1.1);
       }
 
-      .header-icon {
-        font-size: 2rem;
-        color: var(--primary-color);
-        margin-right: 1rem;
-      }
-
-      h2 {
-        color: var(--primary-color);
-        font-size: 1.8rem;
-        font-weight: 600;
-        margin: 0;
-        position: relative;
-      }
-
+      /* Input group styles */
       .input-group {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -222,6 +134,10 @@
       @media (max-width: 768px) {
         .input-group {
           grid-template-columns: 1fr;
+        }
+
+        .container {
+          padding: 1.5rem;
         }
       }
 
@@ -249,24 +165,6 @@
         margin-right: 0.5rem;
       }
 
-      .example-button {
-        background-color: var(--primary-color);
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 0.3rem 0.6rem;
-        margin-bottom: 0.4rem;
-        font-size: 0.8rem;
-        cursor: pointer;
-        transition: var(--transition);
-        flex-shrink: 0;
-        white-space: nowrap;
-      }
-
-      .example-button:hover {
-        background-color: var(--accent-color);
-      }
-
       textarea {
         width: 100%;
         padding: 1rem;
@@ -288,6 +186,7 @@
         box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.2);
       }
 
+      /* File input styles */
       .right-panel {
         display: flex;
         flex-direction: column;
@@ -370,6 +269,25 @@
         animation: fadeIn 0.3s ease;
       }
 
+      .example-button {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.3rem 0.6rem;
+        margin-bottom: 0.4rem;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: var(--transition);
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+
+      .example-button:hover {
+        background-color: var(--accent-color);
+      }
+
+      /* Feedback styles */
       .feedback-container {
         margin-top: 1.5rem;
         display: flex;
@@ -432,17 +350,90 @@
         color: #f44336;
       }
 
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(-10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 100;
+        justify-content: center;
+        align-items: center;
       }
 
+      .modal.active {
+        display: flex;
+        animation: fadeIn 0.3s;
+      }
+
+      .modal-content {
+        background-color: var(--card-bg);
+        border-radius: var(--border-radius);
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .modal-header {
+        display: flex;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 1px solid #eee;
+      }
+
+      .modal-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--primary-color);
+      }
+
+      .modal-controls {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+      }
+
+      .lang-toggle {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+        margin-right: 1rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: var(--transition);
+      }
+
+      .lang-toggle:hover {
+        background-color: var(--secondary-color);
+      }
+
+      .close-modal {
+        background: none;
+        border: none;
+        font-size: 1.8rem;
+        cursor: pointer;
+        color: #666;
+        transition: var(--transition);
+      }
+
+      .close-modal:hover {
+        color: var(--accent-color);
+      }
+
+      .modal-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+      }
+
+      /* Error and loader styles */
       .error-message {
         padding: 1rem;
         background-color: #ffebee;
@@ -478,21 +469,7 @@
         animation: spin 1s ease-in-out infinite;
       }
 
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      body.loading {
-        cursor: default !important;
-      }
-
-      body.loading * {
-        cursor: default !important;
-        pointer-events: none !important;
-      }
-
+      /* Results styling */
       #result {
         margin-top: 2rem;
         padding: 2rem;
@@ -527,22 +504,22 @@
         color: var(--primary-color);
       }
 
+      #result h4,
+      #result h5,
+      #result h6 {
+        color: var(--primary-color);
+        margin-top: 0.8em;
+        margin-bottom: 0.5em;
+      }
+
       #result h4 {
         font-size: 1.4em;
-        margin-top: 0.8em;
-        margin-bottom: 0.5em;
       }
-
       #result h5 {
         font-size: 1.2em;
-        margin-top: 0.8em;
-        margin-bottom: 0.5em;
       }
-
       #result h6 {
         font-size: 1em;
-        margin-top: 0.8em;
-        margin-bottom: 0.5em;
         font-weight: 600;
       }
 
@@ -635,8 +612,22 @@
         max-width: 100%;
       }
 
-      :root {
-        --primary-color-hsl: 211, 98%, 50%;
+      /* Animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
     </style>
   </head>
@@ -652,6 +643,7 @@
             href="https://www.cstimer.net/"
             target="_blank"
             class="cstimer-link"
+            aria-label="Open csTimer website"
           >
             <img
               src="./assets/cstimer.ico"
@@ -659,26 +651,31 @@
               class="cstimer-icon"
             />
           </a>
-          <button id="info-button" class="info-button">
+          <button
+            id="info-button"
+            class="info-button"
+            aria-label="Show information"
+          >
             <i class="fas fa-info-circle"></i>
           </button>
           <a
             href="https://github.com/Somnia1337/csTimer-Analyzer-web"
             target="_blank"
             class="github-link"
+            aria-label="Open GitHub repository"
           >
             <i class="fab fa-github"></i>
           </a>
         </div>
       </div>
 
-      <div class="error-message" id="error-message">
+      <div class="error-message" id="error-message" role="alert">
         <i class="fas fa-exclamation-circle"></i> <span id="error-text"></span>
       </div>
 
       <div class="input-group">
         <div class="options-container">
-          <label class="option-label">
+          <label class="option-label" for="options">
             <i class="fas fa-cog"></i> Analysis Options
           </label>
           <textarea
@@ -712,7 +709,7 @@ Commented</textarea
         <div class="right-panel">
           <div class="file-input-container">
             <div class="option-header">
-              <label class="option-label">
+              <label class="option-label" for="file2">
                 <i class="fas fa-file-import"></i> csTimer Data
               </label>
               <button id="use-example" class="example-button">
@@ -720,7 +717,12 @@ Commented</textarea
               </button>
             </div>
             <div class="file-input">
-              <input type="file" id="file2" accept=".txt" />
+              <input
+                type="file"
+                id="file2"
+                accept=".txt"
+                aria-label="Upload csTimer data file"
+              />
               <div class="file-input-ui">
                 <div class="file-icon">
                   <i class="fas fa-file-upload"></i>
@@ -737,7 +739,7 @@ Commented</textarea
               <span id="filename-display"></span>
             </div>
             <div class="feedback-container">
-              <label class="option-label">
+              <label class="option-label" for="feedback-text">
                 <i class="fas fa-comment"></i> Feedback
               </label>
               <textarea
@@ -756,8 +758,8 @@ Commented</textarea
         </div>
       </div>
 
-      <div class="loader" id="loader">
-        <div class="loader-spinner"></div>
+      <div class="loader" id="loader" aria-live="polite">
+        <div class="loader-spinner" aria-hidden="true"></div>
         <p>Analyzing...</p>
       </div>
 
@@ -766,268 +768,33 @@ Commented</textarea
       </div>
     </div>
 
-    <div id="readme-modal" class="modal">
+    <div
+      id="readme-modal"
+      class="modal"
+      role="dialog"
+      aria-labelledby="modal-title"
+      aria-hidden="true"
+    >
       <div class="modal-content">
         <div class="modal-header">
-          <div class="modal-title">README</div>
+          <div class="modal-title" id="modal-title">README</div>
           <div class="modal-controls">
             <button id="lang-toggle" class="lang-toggle">English</button>
-            <button id="close-modal" class="close-modal">&times;</button>
+            <button id="close-modal" class="close-modal" aria-label="Close">
+              &times;
+            </button>
           </div>
         </div>
         <div id="readme-content" class="modal-body"></div>
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const infoButton = document.getElementById("info-button");
-        const modal = document.getElementById("readme-modal");
-        const closeModal = document.getElementById("close-modal");
-        const langToggle = document.getElementById("lang-toggle");
-        const readmeContent = document.getElementById("readme-content");
-
-        let currentLang = "zh";
-
-        infoButton.addEventListener("click", async function () {
-          modal.classList.add("active");
-          await loadReadme(currentLang);
-        });
-
-        closeModal.addEventListener("click", function () {
-          modal.classList.remove("active");
-        });
-
-        modal.addEventListener("click", function (e) {
-          if (e.target === modal) {
-            modal.classList.remove("active");
-          }
-        });
-
-        langToggle.addEventListener("click", async function () {
-          if (currentLang === "en") {
-            currentLang = "zh";
-            langToggle.textContent = "English";
-          } else {
-            currentLang = "en";
-            langToggle.textContent = "中文";
-          }
-          await loadReadme(currentLang);
-        });
-
-        async function loadReadme(lang) {
-          const readmeUrl =
-            lang === "zh"
-              ? "https://raw.githubusercontent.com/Somnia1337/csTimer-Analyzer-web/main/README-ZH.md"
-              : "https://raw.githubusercontent.com/Somnia1337/csTimer-Analyzer-web/main/README.md";
-
-          try {
-            readmeContent.innerHTML =
-              '<div class="loader active"><div class="loader-spinner"></div><p>Loading README...</p></div>';
-
-            const response = await fetch(readmeUrl);
-            if (!response.ok) {
-              throw new Error(`Failed to load README: ${response.statusText}`);
-            }
-
-            const markdown = await response.text();
-            readmeContent.innerHTML = marked.parse(markdown);
-          } catch (error) {
-            readmeContent.innerHTML = `<div class="error-message active">Error loading README: ${error.message}</div>`;
-          }
-        }
-      });
-
-      document.addEventListener("DOMContentLoaded", function () {
-        const useExampleButton = document.getElementById("use-example");
-        useExampleButton.addEventListener("click", async function () {
-          const fileSelected = document.getElementById("file-selected");
-          const filenameDisplay = document.getElementById("filename-display");
-          const label = document.getElementById("file2-label");
-
-          try {
-            label.textContent = "Loading example file...";
-
-            const response = await fetch(
-              "https://raw.githubusercontent.com/Somnia1337/csTimer-Analyzer-web/main/example.txt"
-            );
-
-            if (!response.ok) {
-              throw new Error(
-                `Failed to load example file: ${response.status}`
-              );
-            }
-
-            const text = await response.text();
-            const blob = new Blob([text], { type: "text/plain" });
-
-            const file = new File([blob], "example.txt", {
-              type: "text/plain",
-            });
-
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-
-            const fileInput = document.getElementById("file2");
-            fileInput.files = dataTransfer.files;
-
-            filenameDisplay.textContent = "example.txt";
-            fileSelected.classList.add("active");
-            label.textContent = "Example file loaded";
-
-            await run();
-          } catch (error) {
-            const errorMessage = document.getElementById("error-message");
-            const errorText = document.getElementById("error-text");
-            errorText.textContent = error.message;
-            errorMessage.classList.add("active");
-            label.textContent = "Error loading example";
-          }
-        });
-      });
-
-      document.addEventListener("DOMContentLoaded", function () {
-        const submitFeedbackBtn = document.getElementById("submit-feedback");
-        const feedbackText = document.getElementById("feedback-text");
-        const feedbackStatus = document.getElementById("feedback-status");
-
-        submitFeedbackBtn.addEventListener("click", function () {
-          if (!feedbackText.value.trim()) {
-            feedbackStatus.textContent = "Please enter some feedback";
-            feedbackStatus.className = "feedback-status error";
-            return;
-          }
-
-          submitFeedbackBtn.disabled = true;
-          feedbackStatus.textContent =
-            "Sending... This may take up to a minute.";
-          feedbackStatus.className = "feedback-status";
-
-          Email.send({
-            Host: "smtp.elasticemail.com",
-            Username: "2581063732@qq.com",
-            Password: "035BB2FB8E77484CF1A6D36FBFED6FBE1181",
-            To: "somnia1337x@gmail.com",
-            From: "somnia1337x@gmail.com",
-            Subject: "csTimer-Analyzer-web Feedback",
-            Body: `<h2>Feedback from csTimer Analyzer</h2>
-             <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-             <p><strong>Message:</strong></p>
-             <p>${feedbackText.value.replace(/\n/g, "<br>")}</p>`,
-          }).then(function (message) {
-            submitFeedbackBtn.disabled = false;
-
-            if (message === "OK") {
-              feedbackStatus.textContent = "Thank you for your feedback!";
-              feedbackStatus.className = "feedback-status success";
-              feedbackText.value = "";
-            } else {
-              feedbackStatus.textContent =
-                "Error sending feedback. Please try again.";
-              feedbackStatus.className = "feedback-status error";
-              console.error("SMTP error:", message);
-            }
-          });
-        });
-      });
-    </script>
-
-    <script type="module">
-      import init, { analyze_from_files } from "./pkg/cstimer_analyzer_web.js";
-
-      document
-        .getElementById("file2")
-        .addEventListener("change", async function (e) {
-          const file = e.target.files[0];
-          const fileSelected = document.getElementById("file-selected");
-          const filenameDisplay = document.getElementById("filename-display");
-          const label = document.getElementById("file2-label");
-
-          if (file) {
-            filenameDisplay.textContent = file.name;
-            fileSelected.classList.add("active");
-            label.textContent = "File selected";
-            await run();
-          } else {
-            fileSelected.classList.remove("active");
-            label.textContent = "Upload csTimer Data";
-          }
-        });
-
-      async function run() {
-        document.body.classList.add("loading");
-        await init();
-        const optionsText = document.getElementById("options").value;
-        const file2 = document.getElementById("file2").files[0];
-        const resultDiv = document.getElementById("result");
-        const loader = document.getElementById("loader");
-        const errorMessage = document.getElementById("error-message");
-        const errorText = document.getElementById("error-text");
-        const canvas = document.createElement("canvas");
-
-        // Set canvas to be hidden and not affect layout
-        canvas.style.display = "none";
-        canvas.width = 1920;
-        canvas.height = 1080;
-        document.body.appendChild(canvas);
-
-        errorMessage.classList.remove("active");
-
-        if (!optionsText) {
-          errorText.textContent = "Please enter analysis options.";
-          errorMessage.classList.add("active");
-          canvas.remove();
-          document.body.classList.remove("loading");
-          return;
-        }
-
-        if (!file2) {
-          errorText.textContent = "Please upload a csTimer data file.";
-          errorMessage.classList.add("active");
-          canvas.remove();
-          document.body.classList.remove("loading");
-          return;
-        }
-
-        loader.classList.add("active");
-
-        const encoder = new TextEncoder();
-        const data1 = encoder.encode(optionsText);
-
-        try {
-          const data2 = await file2.arrayBuffer();
-
-          try {
-            const result = analyze_from_files(
-              new Uint8Array(data1),
-              new Uint8Array(data2),
-              canvas
-            );
-
-            resultDiv.innerHTML = marked.parse(result);
-            loader.classList.remove("active");
-            resultDiv.scrollIntoView({ behavior: "smooth", block: "start" });
-
-            canvas.remove();
-          } catch (e) {
-            loader.classList.remove("active");
-            errorText.textContent = "Analysis error: " + e.message;
-            errorMessage.classList.add("active");
-            canvas.remove();
-          }
-        } catch (e) {
-          loader.classList.remove("active");
-          errorText.textContent = "File reading error: " + e.message;
-          errorMessage.classList.add("active");
-          canvas.remove();
-        } finally {
-          document.body.classList.remove("loading");
-        }
-      }
-
-      window.run = run;
-    </script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"
+      defer
+    ></script>
+    <script src="https://smtpjs.com/v3/smtp.js" defer></script>
+    <script src="js/scripts.js" defer></script>
+    <script type="module" src="js/analyzer.js"></script>
   </body>
 </html>

@@ -328,6 +328,10 @@ function __wbg_get_imports() {
         const ret = new Function(getStringFromWasm0(arg0, arg1));
         return ret;
     };
+    imports.wbg.__wbg_now_807e54c39636c349 = function() {
+        const ret = Date.now();
+        return ret;
+    };
     imports.wbg.__wbg_offsetHeight_4b2bc94377e10979 = function(arg0) {
         const ret = arg0.offsetHeight;
         return ret;

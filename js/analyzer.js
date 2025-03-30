@@ -1,4 +1,7 @@
-import init, { analyze_from_files } from "../pkg/cstimer_analyzer_web.js";
+import init, {
+  analyze_from_files,
+  render_markdown,
+} from "../pkg/cstimer_analyzer_web.js";
 
 async function run() {
   document.body.classList.add("loading");
@@ -49,7 +52,7 @@ async function run() {
         canvas
       );
 
-      resultDiv.innerHTML = marked.parse(result);
+      resultDiv.innerHTML = render_markdown(result);
       loader.classList.remove("active");
       resultDiv.scrollIntoView({ behavior: "smooth", block: "start" });
 

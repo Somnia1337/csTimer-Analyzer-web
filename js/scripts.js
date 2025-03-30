@@ -1,3 +1,5 @@
+import init, { render_markdown } from "../pkg/cstimer_analyzer_web.js";
+
 document.addEventListener("DOMContentLoaded", function () {
   initializeModalHandlers();
   initializeExampleButton();
@@ -62,7 +64,8 @@ function initializeModalHandlers() {
       }
 
       const markdown = await response.text();
-      readmeContent.innerHTML = marked.parse(markdown);
+      await init();
+      readmeContent.innerHTML = render_markdown(markdown);
     } catch (error) {
       readmeContent.innerHTML = `<div class="error-message active">Error loading README: ${error.message}</div>`;
     }

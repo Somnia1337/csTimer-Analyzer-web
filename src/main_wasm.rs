@@ -1,5 +1,6 @@
 extern crate console_error_panic_hook;
 
+use pulldown_cmark::{Parser, html};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
@@ -37,4 +38,13 @@ pub fn analyze_from_files(
         .map_err(|e| JsValue::from_str(&format!("Failed to convert analysis to UTF-8: {}", e)))?;
 
     Ok(JsValue::from_str(&analysis))
+}
+
+#[wasm_bindgen]
+pub fn render_markdown(input: &str) -> JsValue {
+    let parser = Parser::new(input);
+    let mut html_output = String::new();
+    html::push_html(&mut html_output, parser);
+
+    JsValue::from_str(&html_output)
 }

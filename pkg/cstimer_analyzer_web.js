@@ -197,6 +197,17 @@ export function analyze_from_files(options_txt, data_txt, canvas) {
     return takeFromExternrefTable0(ret[0]);
 }
 
+/**
+ * @param {string} input
+ * @returns {any}
+ */
+export function render_markdown(input) {
+    const ptr0 = passStringToWasm0(input, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.render_markdown(ptr0, len0);
+    return ret;
+}
+
 async function __wbg_load(module, imports) {
     if (typeof Response === 'function' && module instanceof Response) {
         if (typeof WebAssembly.instantiateStreaming === 'function') {

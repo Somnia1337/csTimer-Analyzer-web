@@ -1,12 +1,14 @@
 /* tslint:disable */
 /* eslint-disable */
 export function analyze_from_files(options_txt: Uint8Array, data_txt: Uint8Array, canvas: HTMLCanvasElement): any;
+export function render_markdown(input: string): any;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly analyze_from_files: (a: number, b: number, c: number, d: number, e: any) => [number, number, number];
+  readonly render_markdown: (a: number, b: number) => any;
   readonly __wbindgen_exn_store: (a: number) => void;
   readonly __externref_table_alloc: () => number;
   readonly __wbindgen_export_2: WebAssembly.Table;

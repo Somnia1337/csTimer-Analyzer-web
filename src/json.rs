@@ -1,7 +1,14 @@
 use crate::record::Record;
 use crate::session::Session;
 use crate::types::*;
+
 use serde_json::Value;
+use web_sys::js_sys::Date;
+
+// Gets the local offset from UTC in seconds.
+fn local_offset_seconds() -> i64 {
+    -Date::new_0().get_timezone_offset() as i64 * 60
+}
 
 /// Splits sessions and parse every record within.
 pub fn split_sessions(input: &str) -> Vec<Session> {
@@ -16,20 +23,27 @@ pub fn split_sessions(input: &str) -> Vec<Session> {
 
     let mut sessions = vec![];
     if let Some(obj) = data.as_object() {
+        let offset = local_offset_seconds();
+
         for (key, value) in obj.iter() {
             if key.starts_with("session") {
                 if let Some(id) = key
                     .strip_prefix("session")
                     .and_then(|s| s.parse::<u8>().ok())
                 {
-                    if let Some(records) = extract_records(value) {
+                    if let Some(records) = extract_records(value, offset) {
                         if records.is_empty() {
                             continue;
                         }
                         if let Some((_, name, rank, date_time)) =
                             session_data.iter().find(|(sid, _, _, _)| *sid == id)
                         {
-                            sessions.push(Session::new(*rank, name.clone(), *date_time, &records));
+                            sessions.push(Session::new(
+                                *rank,
+                                name.clone(),
+                                (date_time.0 + offset, date_time.1 + offset),
+                                &records,
+                            ));
                         }
                     }
                 }
@@ -43,7 +57,7 @@ pub fn split_sessions(input: &str) -> Vec<Session> {
 }
 
 /// Parses records in a session.
-pub fn extract_records(session: &Value) -> Option<Vec<Record>> {
+pub fn extract_records(session: &Value, offset: i64) -> Option<Vec<Record>> {
     session
         .as_array()
         .iter()
@@ -82,7 +96,7 @@ pub fn extract_records(session: &Value) -> Option<Vec<Record>> {
                 time_millis as Milliseconds,
                 scramble,
                 comment,
-                time_epoch,
+                time_epoch + offset,
             ))
         })
         .collect()

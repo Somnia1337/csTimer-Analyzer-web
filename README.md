@@ -4,6 +4,10 @@ English | [中文](https://github.com/Somnia1337/csTimer-Analyzer-web/blob/main/
 
 The web app for [csTimer-Analyzer](https://github.com/Somnia1337/csTimer-Analyzer), leveraging the power of [WebAssembly](https://developer.mozilla.org/en-US/docs/WebAssembly) and the [Rust](https://www.rust-lang.org) toolchain.
 
+<div align=center>
+  <img src="https://github.com/Somnia1337/csTimer-Analyzer-web/blob/main/assets/csTimer-Analyzer.png?raw=true" width="1280px">
+</div>
+
 Features:
 
 - **SECURE**. Your data will not be uploaded, all computations are done in your browser(thanks to WebAssembly).

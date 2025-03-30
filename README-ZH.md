@@ -1,8 +1,12 @@
 [English](https://github.com/Somnia1337/csTimer-Analyzer-web/blob/main/README.md) | 中文
 
-## [csTimer 分析器(网页版)](https://somnia1337.github.io/csTimer-Analyzer-web/)
+## [csTimer 分析师(网页版)](https://somnia1337.github.io/csTimer-Analyzer-web/)
 
-[csTimer 分析器](https://github.com/Somnia1337/csTimer-Analyzer) 的网页版，利用强大的 [WebAssembly](https://developer.mozilla.org/zh-CN/docs/WebAssembly) 和 [Rust](https://www.rust-lang.org/zh-CN) 工具链实现。
+[csTimer 分析师](https://github.com/Somnia1337/csTimer-Analyzer) 的网页版，利用强大的 [WebAssembly](https://developer.mozilla.org/zh-CN/docs/WebAssembly) 和 [Rust](https://www.rust-lang.org/zh-CN) 工具链实现。
+
+<div align=center>
+  <img src="https://github.com/Somnia1337/csTimer-Analyzer-web/blob/main/assets/csTimer-Analyzer-ZH.png?raw=true" width="1280px">
+</div>
 
 功能特点：
 
@@ -14,7 +18,7 @@
 ### 使用方法
 
 1. 访问 [csTimer](https://www.cstimer.net/)，点击“导出”按钮，然后点击“导出到文件”。一个名为 `cstimer_YYYYMMDD_hhmmss.txt` 的数据文件将会下载到本地。
-2. 打开 [csTimer 分析器(网页版)](https://somnia1337.github.io/csTimer-Analyzer-web/)，在输入框中编写你的分析选项，配置教程见下文。
+2. 打开 [csTimer 分析师(网页版)](https://somnia1337.github.io/csTimer-Analyzer-web/)，在输入框中编写你的分析选项，配置教程见下文。
 3. 点击网页的上传按钮，选择刚才下载的数据文件，浏览器将自动开始分析，随后展示分析报告。
 
 ### 分析选项

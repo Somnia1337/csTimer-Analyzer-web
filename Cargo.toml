@@ -10,6 +10,7 @@ crate-type = ["cdylib", "rlib"]
 chrono = "0.4.38"
 console_error_panic_hook = "0.1.7"
 env_logger = "0.11.5"
+instant = { version = "0.1.13", features = ["wasm-bindgen", "inaccurate"] }
 plotters = "0.3.7"
 plotters-canvas = "0.3.1"
 serde = { version = "1.0.219", features = ["derive"] }

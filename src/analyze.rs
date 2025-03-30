@@ -1,5 +1,6 @@
 use std::io::{self, Write};
 
+use instant::{Duration, Instant};
 use web_sys::HtmlCanvasElement;
 
 use crate::session::*;
@@ -65,7 +66,7 @@ fn append_session_date_time<W: Write>(writer: &mut W, session: &Session) -> io::
 
 /// Appends a quote.
 fn append_message<W: Write>(writer: &mut W, callout_type: &str, content: String) -> io::Result<()> {
-    writeln!(writer, "> **{}**: {}", callout_type, content)
+    writeln!(writer, "> **{}**: {}\n", callout_type, content)
 }
 
 /// Appends an image data url.
@@ -76,6 +77,10 @@ fn append_image_url<W: Write>(writer: &mut W, url: &str) -> io::Result<()> {
 /// Converts canvas to data url.
 fn canvas_to_data_url(canvas: &HtmlCanvasElement) -> String {
     canvas.to_data_url().unwrap_or_else(|_| String::from(""))
+}
+
+fn append_timing<W: Write>(writer: &mut W, timing: Duration, desc: &str) -> io::Result<()> {
+    writeln!(writer, "info: {} took {:.01?}\n", desc, timing)
 }
 
 /// Appends an analysis section.
@@ -238,6 +243,8 @@ pub fn analyze<W: Write>(
     writer: &mut W,
     canvas: HtmlCanvasElement,
 ) -> io::Result<()> {
+    let overall_timer = Instant::now();
+
     append_analysis_info(
         writer,
         sessions,
@@ -246,13 +253,21 @@ pub fn analyze<W: Write>(
     )?;
 
     for session in sessions {
+        let session_timer = Instant::now();
+
         append_session_title(writer, session)?;
         append_session_date_time(writer, session)?;
 
         for a_type in options {
+            let section_timer = Instant::now();
             append_section(writer, session, a_type, &canvas)?;
+            append_timing(writer, section_timer.elapsed(), "PARAGRAPH")?;
         }
+
+        append_timing(writer, session_timer.elapsed(), "SESSION")?;
     }
+
+    append_timing(writer, overall_timer.elapsed(), "ANALYSIS")?;
 
     Ok(())
 }

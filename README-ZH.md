@@ -5,7 +5,7 @@
 [csTimer 分析师](https://github.com/Somnia1337/csTimer-Analyzer) 的网页版，利用强大的 [WebAssembly](https://developer.mozilla.org/zh-CN/docs/WebAssembly) 和 [Rust](https://www.rust-lang.org/zh-CN) 工具链实现。
 
 <div align=center>
-  <img src="https://github.com/Somnia1337/csTimer-Analyzer-web/blob/main/assets/csTimer-Analyzer-ZH.png?raw=true" width="1280px">
+  <img src="./assets/csTimer-Analyzer-ZH.png">
 </div>
 
 功能特点：

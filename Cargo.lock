@@ -232,7 +232,7 @@ dependencies = [
 
 [[package]]
 name = "cstimer-analyzer-web"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "chrono",
  "console_error_panic_hook",

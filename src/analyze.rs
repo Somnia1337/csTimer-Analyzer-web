@@ -61,7 +61,12 @@ fn append_session_title<W: Write>(writer: &mut W, session: &Session) -> io::Resu
 /// Appends the start and end date_times of a session.
 fn append_session_date_time<W: Write>(writer: &mut W, session: &Session) -> io::Result<()> {
     let (start, end) = session.date_time();
-    writeln!(writer, "{} ~ {}\n", start, end)
+    writeln!(
+        writer,
+        "{} ~ {}\n",
+        start.to_string().strip_suffix(" UTC").unwrap(),
+        end.to_string().strip_suffix(" UTC").unwrap(),
+    )
 }
 
 /// Appends a quote.
@@ -79,6 +84,7 @@ fn canvas_to_data_url(canvas: &HtmlCanvasElement) -> String {
     canvas.to_data_url().unwrap_or_else(|_| String::from(""))
 }
 
+// Appends an analysis timing section.
 fn append_timing<W: Write>(writer: &mut W, timing: Duration, desc: &str) -> io::Result<()> {
     writeln!(writer, "info: {} took {:.01?}\n", desc, timing)
 }

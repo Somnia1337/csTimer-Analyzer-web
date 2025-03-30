@@ -97,7 +97,7 @@ fn append_section<W: Write>(
             let (best, worst, mean, average) = session.overview();
             let overview = format!(
                 r#"| best | worst | mean | avg |
-| --- | --- | --- | --- |
+| :-: | :-: | :-: | :-: |
 | `{}` | `{}` | `{}` | `{}` |"#,
                 best, worst, mean, average,
             );
@@ -105,7 +105,7 @@ fn append_section<W: Write>(
             let total = session.records().len() as f64;
             let solve_states = format!(
                 r#"| Ok | +2 | DNF |
-| --- | --- | --- |
+| :-: | :-: | :-: |
 | `{}` | `{}` `({:.2}%)` | `{}` `({:.2}%)` |"#,
                 ok,
                 plus2,

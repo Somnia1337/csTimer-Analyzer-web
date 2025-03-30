@@ -73,7 +73,8 @@ pub fn extract_records(session: &Value) -> Option<Vec<Record>> {
                 .to_string()
                 .trim()
                 .replace("\\\"", "\"")
-                .replace("\\\\", "\\");
+                .replace("\\\\", "\\")
+                .replace("*", "\\*");
             let time_epoch = r.get(3)?.as_i64()?;
 
             Some(Record::new(

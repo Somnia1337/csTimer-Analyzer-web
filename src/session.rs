@@ -180,8 +180,9 @@ impl Session {
                     chunk.sort_unstable();
 
                     Some(
-                        chunk.iter().skip(cut_off).take(take).sum::<Milliseconds>()
-                            / take as Milliseconds,
+                        (chunk.iter().skip(cut_off).take(take).sum::<Milliseconds>() as f64
+                            / take as f64)
+                            .round() as Milliseconds,
                     )
                 }
             }

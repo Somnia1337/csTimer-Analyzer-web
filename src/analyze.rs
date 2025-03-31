@@ -3,8 +3,11 @@ use std::io::{self, Write};
 use instant::{Duration, Instant};
 use web_sys::HtmlCanvasElement;
 
+use crate::options::{AnalysisOption, StatsType};
 use crate::session::Session;
-use crate::types::{Analyze, StatsType, TimeReadable};
+use crate::types::TimeReadable;
+
+// todo: W: Write
 
 /// Appends the data writer path
 /// and the parsed options.
@@ -12,7 +15,7 @@ fn append_analysis_info<W: Write>(
     writer: &mut W,
     sessions: &[Session],
     record_count: usize,
-    options: &[Analyze],
+    options: &[AnalysisOption],
 ) -> io::Result<()> {
     writeln!(writer, "### Dataset\n")?;
     writeln!(
@@ -37,6 +40,7 @@ fn append_analysis_info<W: Write>(
     writeln!(writer, "### Analysis Options\n")?;
     writeln!(
         writer,
+        // todo
         "Successfully parsed `{}` options (failures ignored and duplicates removed).\n",
         options.len(),
     )?;
@@ -84,22 +88,36 @@ fn canvas_to_data_url(canvas: &HtmlCanvasElement) -> String {
     canvas.to_data_url().unwrap_or_else(|_| String::new())
 }
 
-// Appends an analysis timing section.
-fn append_timing<W: Write>(writer: &mut W, timing: Duration, desc: &str) -> io::Result<()> {
-    writeln!(writer, "info: {} took {:.01?}\n", desc, timing)
+/// Appends an analysis timing section.
+fn append_timings<W: Write>(
+    writer: &mut W,
+    parsing_time: Duration,
+    timings: &[(usize, Duration)],
+    overall_time: Duration,
+) -> io::Result<()> {
+    writeln!(writer, "### Debug Info\n")?;
+
+    writeln!(writer, "- Parsing data: {:.01?}", parsing_time)?;
+    writeln!(writer, "- Analyzing")?;
+    for (rank, timing) in timings {
+        writeln!(writer, "\t- Session [#{}]: {:.01?}", rank, timing)?;
+    }
+    writeln!(writer, "- Total: {:.01?}", overall_time)?;
+
+    Ok(())
 }
 
 /// Appends an analysis section.
 fn append_section<W: Write>(
     writer: &mut W,
     session: &Session,
-    a_type: &Analyze,
+    a_type: &AnalysisOption,
     canvas: &HtmlCanvasElement,
 ) -> io::Result<()> {
     write!(writer, "#### ")?;
 
     match a_type {
-        Analyze::Overview => {
+        AnalysisOption::Overview => {
             let (best, worst, mean, average) = session.overview();
             let overview = format!(
                 r"| best | worst | mean | avg |
@@ -122,7 +140,7 @@ fn append_section<W: Write>(
             writeln!(writer, "Overview\n\n{}\n\n{}\n", overview, solve_states)
         }
 
-        Analyze::PbHistory(stats_type) => {
+        AnalysisOption::PbHistory(stats_type) => {
             writeln!(writer, "**{}** PB History\n", stats_type)?;
 
             if let Some(pairs) = session.pb_breakers(stats_type) {
@@ -135,7 +153,7 @@ fn append_section<W: Write>(
                 } else {
                     let pb_history = pairs
                         .iter()
-                        .map(|p| p.1.readable())
+                        .map(|p| p.1.to_readable_string())
                         .collect::<Vec<_>>()
                         .join(" -> ");
                     writeln!(writer, "```\n{}\n```\n", pb_history)?;
@@ -163,7 +181,7 @@ fn append_section<W: Write>(
             }
         }
 
-        Analyze::Grouping(stats_type, interval) => {
+        AnalysisOption::Grouping(stats_type, interval) => {
             writeln!(
                 writer,
                 "**{}** Grouping by {}s\n",
@@ -194,7 +212,7 @@ fn append_section<W: Write>(
             }
         }
 
-        Analyze::Trending(stats_type) => {
+        AnalysisOption::Trending(stats_type) => {
             writeln!(writer, "**{}** Trending\n", stats_type)?;
             if let Some(data) = session.trend(stats_type) {
                 let desc = stats_type.to_string();
@@ -202,7 +220,12 @@ fn append_section<W: Write>(
                 match session.draw_trending(canvas, &data, &desc) {
                     Ok(()) => {
                         let data_url = canvas_to_data_url(canvas);
-                        append_image_url(writer, &data_url)
+                        append_image_url(writer, &data_url)?;
+                        append_message(
+                            writer,
+                            "info",
+                            "The inconsistencies are from a feature starting at v0.6.0, where DNFs are treated as empty points. 断点是 v0.6.0 的新特性，DNF 被绘制为空点。",
+                        )
                     }
                     Err(e) => append_message(
                         writer,
@@ -219,7 +242,7 @@ fn append_section<W: Write>(
             }
         }
 
-        Analyze::Commented => {
+        AnalysisOption::Commented => {
             writeln!(writer, "Commented Records\n")?;
 
             let commented = session.commented_records();
@@ -245,9 +268,10 @@ fn append_section<W: Write>(
 /// Analyzes each session, using parsed options.
 pub fn analyze<W: Write>(
     sessions: &[Session],
-    options: &[Analyze],
+    options: &[AnalysisOption],
     writer: &mut W,
     canvas: &HtmlCanvasElement,
+    parsing_time: Duration,
 ) -> io::Result<()> {
     let overall_timer = Instant::now();
 
@@ -258,22 +282,25 @@ pub fn analyze<W: Write>(
         options,
     )?;
 
+    let mut timings = Vec::with_capacity(sessions.len());
+
     for session in sessions {
         let session_timer = Instant::now();
 
         append_session_title(writer, session)?;
         append_session_date_time(writer, session)?;
 
+        if session.non_dnf_records().is_empty() {
+            append_message(writer, "error", "Every record is DNF")?;
+        }
         for a_type in options {
-            let section_timer = Instant::now();
             append_section(writer, session, a_type, canvas)?;
-            append_timing(writer, section_timer.elapsed(), "PARAGRAPH")?;
         }
 
-        append_timing(writer, session_timer.elapsed(), "SESSION")?;
+        timings.push((session.rank(), session_timer.elapsed()));
     }
 
-    append_timing(writer, overall_timer.elapsed(), "ANALYSIS")?;
+    append_timings(writer, parsing_time, &timings, overall_timer.elapsed())?;
 
     Ok(())
 }

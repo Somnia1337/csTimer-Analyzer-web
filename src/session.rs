@@ -6,8 +6,9 @@ use plotters::prelude::*;
 use plotters_canvas::CanvasBackend;
 use web_sys::HtmlCanvasElement;
 
+use crate::options::StatsType;
 use crate::record::Record;
-use crate::types::{GroupRecord, Milliseconds, Seconds, SolveState, StatsType, TimeReadable};
+use crate::types::{GroupRecord, Milliseconds, Seconds, SolveState, TimeReadable};
 
 /// A training session, same as the "session" in csTimer.
 #[derive(Debug, Clone)]
@@ -22,23 +23,6 @@ pub struct Session {
 impl Session {
     pub fn new(rank: usize, name: String, date_time: (i64, i64), records: &[Record]) -> Self {
         let records: Vec<Rc<Record>> = records.iter().cloned().map(Rc::new).collect();
-        let non_dnf_records = records
-            .iter()
-            .filter(|r| !r.solve_state().is_dnf())
-            .cloned()
-            .collect();
-
-        Self {
-            rank,
-            name,
-            date_time,
-            records,
-            non_dnf_records,
-        }
-    }
-
-    pub fn from(rank: usize, name: String, date_time: (i64, i64), records: &[Rc<Record>]) -> Self {
-        let records = records.to_vec();
         let non_dnf_records = records
             .iter()
             .filter(|r| !r.solve_state().is_dnf())
@@ -103,7 +87,7 @@ impl Session {
     }
 
     /// Bounds of non-DNF solve times in seconds,
-    /// padding at least 1 second at both ends.
+    /// padding on both ends.
     fn time_bounds(&self) -> (Milliseconds, Milliseconds) {
         let (best, worst) = self.best_and_worst();
 
@@ -111,14 +95,10 @@ impl Session {
     }
 
     /// Mean of non-DNF solve times.
-    fn mean(&self) -> Option<Milliseconds> {
-        if self.non_dnf_records.is_empty() {
-            return None;
-        }
-
+    fn mean(&self) -> Milliseconds {
         let sum: Milliseconds = self.non_dnf_records.iter().map(|r| r.time()).sum();
 
-        Some((sum as f32 / self.non_dnf_records.len() as f32) as Milliseconds)
+        (sum as f32 / self.non_dnf_records.len() as f32).round() as Milliseconds
     }
 
     /// Count of solves that has
@@ -193,6 +173,7 @@ impl Session {
     /// Returns `None` if the given interval is not divisible
     /// by 1000, nor 1000 is divisible by it.
     pub fn try_grouping(&self, interval: Milliseconds) -> Option<Vec<GroupRecord>> {
+        // todo: reject during parsing
         if !(interval != 0 && (1000 % interval == 0 || interval % 1000 == 0)) {
             return None;
         }
@@ -262,9 +243,7 @@ impl Session {
 
         let mut result = Vec::new();
         for (i, _) in self.records.iter().enumerate().skip(s_scale) {
-            if let Some(stats) = self.stats(i, s_type) {
-                result.push(stats);
-            }
+            result.push(self.stats(i, s_type).unwrap_or_default());
         }
 
         if result.is_empty() {
@@ -282,16 +261,18 @@ impl Session {
     pub fn overview(&self) -> (String, String, String, String) {
         let n = self.records.len();
         let (best, worst) = self.best_and_worst();
-        let mean = match self.mean() {
-            Some(m) => m.readable(),
-            None => String::from("DNF"),
-        };
+        let mean = self.mean();
         let average = match self.stats(n - 1, &StatsType::Average(n)) {
-            Some(avg) => avg.readable(),
+            Some(avg) => avg.to_readable_string(),
             None => String::from("DNF"),
         };
 
-        (best.readable(), worst.readable(), mean, average)
+        (
+            best.to_readable_string(),
+            worst.to_readable_string(),
+            mean.to_readable_string(),
+            average,
+        )
     }
 
     /// Returns the counts of
@@ -350,7 +331,7 @@ impl Session {
             .axis_desc_style(("Consolas", 40).into_font())
             .x_desc("Range / time")
             .y_desc("Count")
-            .x_label_formatter(&Seconds::readable)
+            .x_label_formatter(&Seconds::to_readable_string)
             .draw()?;
 
         let coords: Vec<(f32, u32)> = groups
@@ -380,6 +361,7 @@ impl Session {
         desc: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let n = data.len();
+        let non_zero_n = data.iter().filter(|x| **x > 0).count();
         let max = data.iter().max().unwrap();
 
         let root = CanvasBackend::with_canvas_object(canvas.clone())
@@ -389,7 +371,7 @@ impl Session {
 
         let caption = format!(
             "[#{}] {} {} trending ({} plots)",
-            self.rank, self.name, desc, n
+            self.rank, self.name, desc, non_zero_n
         );
 
         let mut chart = ChartBuilder::on(&root)
@@ -404,13 +386,37 @@ impl Session {
             .label_style(("Consolas", 32).into_font())
             .axis_desc_style(("Consolas", 40).into_font())
             .x_desc("Stats Number")
-            .y_label_formatter(&Seconds::readable)
+            .y_label_formatter(&Seconds::to_readable_string)
             .draw()?;
 
-        chart.draw_series(LineSeries::new(
-            (0..n).map(|x| (x, data[x] as f32 / 1000.0)),
-            RGBColor(91, 169, 253).stroke_width(3),
-        ))?;
+        let mut start = data.iter().position(|x| *x > 0).unwrap_or(n);
+
+        loop {
+            let end = data
+                .iter()
+                .skip(start + 1)
+                .position(|x| *x == 0)
+                .unwrap_or(n - start - 1)
+                + start
+                + 1;
+
+            chart.draw_series(LineSeries::new(
+                (start..end).map(|i| (i, data[i] as f32 / 1000.0)),
+                RGBColor(91, 169, 253).stroke_width(3),
+            ))?;
+
+            if end == n {
+                break;
+            }
+
+            start = data
+                .iter()
+                .skip(end + 1)
+                .position(|x| *x > 0)
+                .unwrap_or(n - end - 1)
+                + end
+                + 1;
+        }
 
         root.present()?;
 

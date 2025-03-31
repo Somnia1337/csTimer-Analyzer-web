@@ -71,7 +71,7 @@ impl fmt::Display for Record {
             "@{}\n\n{}- time: `{}`\n- scramble: *{}*\n{}",
             self.date_time().to_string().strip_suffix(" UTC").unwrap(),
             solve_state,
-            self.time.readable(),
+            self.time.to_readable_string(),
             self.scramble,
             comment
         )

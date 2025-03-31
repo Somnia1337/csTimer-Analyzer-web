@@ -1,5 +1,6 @@
 extern crate console_error_panic_hook;
 
+use instant::Instant;
 use pulldown_cmark::{Options, Parser, html};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
@@ -7,6 +8,10 @@ use web_sys::HtmlCanvasElement;
 use crate::analyze::analyze;
 use crate::json::split_sessions;
 use crate::options::parse_options;
+
+// todo: unwrap()s
+
+// todo: leverage browser cache to use without internet
 
 #[wasm_bindgen]
 pub fn analyze_from_files(
@@ -22,15 +27,20 @@ pub fn analyze_from_files(
     let data = String::from_utf8(data_txt.to_vec())
         .map_err(|e| JsValue::from_str(&format!("Failed to parse data: {}", e)))?;
 
+    let parsing_timer = Instant::now();
+
     // Reads and parses options
     let options = parse_options(&options);
 
     // Splits sessions
     let sessions = split_sessions(&data);
+    // todo
+
+    let parsing_time = parsing_timer.elapsed();
 
     // Analyzes sessions
     let mut output = Vec::new();
-    analyze(&sessions, &options, &mut output, &canvas)
+    analyze(&sessions, &options, &mut output, &canvas, parsing_time)
         .map_err(|e| JsValue::from_str(&format!("Failed to analyze sessions: {}", e)))?;
 
     // Return markdown result

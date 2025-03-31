@@ -1,7 +1,5 @@
-use std::convert::TryFrom;
 use std::{fmt, rc::Rc};
 
-use crate::errors::{ParseAnalysisError, ParseStatsError};
 use crate::record::Record;
 
 /// Milliseconds in u32.
@@ -22,11 +20,11 @@ const HOUR: Milliseconds = 3_600_000;
 /// Formats a time type into a
 /// human-readable string.
 pub trait TimeReadable {
-    fn readable(&self) -> String;
+    fn to_readable_string(&self) -> String;
 }
 
 impl TimeReadable for Milliseconds {
-    fn readable(&self) -> String {
+    fn to_readable_string(&self) -> String {
         let t = *self;
 
         if t < SEC {
@@ -53,10 +51,10 @@ impl TimeReadable for Milliseconds {
 }
 
 impl TimeReadable for Seconds {
-    fn readable(&self) -> String {
+    fn to_readable_string(&self) -> String {
         let millis = (*self * 1000.0) as Milliseconds;
 
-        millis.readable()
+        millis.to_readable_string()
     }
 }
 
@@ -118,147 +116,5 @@ impl GroupRecord {
 
     pub fn records(&self) -> &[Rc<Record>] {
         &self.records
-    }
-}
-
-/// The scale(number) of statistics.
-type StatsScale = usize;
-
-/// The type of statistics.
-#[derive(Clone, Copy)]
-pub enum StatsType {
-    /// A single solve.
-    Single,
-
-    /// The plain-mean of some solves, no DNF allowed.
-    Mean(StatsScale),
-
-    /// The cutoff average of some solves,
-    /// cutting off at least 5% records at both ends,
-    /// up to 5% DNFs are allowed.
-    Average(StatsScale),
-}
-
-impl fmt::Display for StatsType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let label = match self {
-            StatsType::Single => String::from("Single"),
-            StatsType::Mean(scale) => format!("mo{}", scale),
-            StatsType::Average(scale) => format!("ao{}", scale),
-        };
-
-        write!(f, "{}", label)
-    }
-}
-
-impl TryFrom<&str> for StatsType {
-    type Error = ParseStatsError;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let value = value.trim().to_lowercase();
-
-        if value == "single" {
-            return Ok(StatsType::Single);
-        }
-
-        if let Some(inner) = value.strip_prefix("mo") {
-            let scale = inner.parse::<StatsScale>()?;
-
-            return if scale > 0 {
-                Ok(StatsType::Mean(scale))
-            } else {
-                Err(ParseStatsError::ScaleIsZero)
-            };
-        }
-
-        if let Some(inner) = value.strip_prefix("ao") {
-            let scale = inner.parse::<StatsScale>()?;
-
-            return if scale > 0 {
-                Ok(StatsType::Average(scale))
-            } else {
-                Err(ParseStatsError::ScaleIsZero)
-            };
-        }
-
-        Err(ParseStatsError::InvalidFormat)
-    }
-}
-
-/// Option of a single analysis.
-pub enum Analyze {
-    Overview,
-    PbHistory(StatsType),
-    Grouping(StatsType, Milliseconds),
-    Trending(StatsType),
-    Commented,
-}
-
-impl fmt::Display for Analyze {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let label = match self {
-            Analyze::Overview => String::from("Overview"),
-            Analyze::PbHistory(stats_type) => format!("PbHistory({})", stats_type),
-            Analyze::Grouping(stats_type, interval) => {
-                format!(
-                    "Grouping({}, by {}s)",
-                    stats_type,
-                    *interval as f32 / 1000.0
-                )
-            }
-            Analyze::Trending(stats_type) => format!("Trending({})", stats_type),
-            Analyze::Commented => String::from("Commented"),
-        };
-
-        write!(f, "{}", label)
-    }
-}
-
-impl TryFrom<&str> for Analyze {
-    type Error = ParseAnalysisError;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let mut value = value.trim().to_lowercase();
-        if let Some(i) = value.find('#') {
-            value = value[0..i].to_string();
-        }
-
-        if value == "overview" {
-            return Ok(Analyze::Overview);
-        }
-
-        if let Some(inner) = value.strip_prefix("pbhistory(") {
-            if let Some(inner) = inner.strip_suffix(")") {
-                let stats = StatsType::try_from(inner)?;
-                return Ok(Analyze::PbHistory(stats));
-            }
-        }
-
-        if let Some(inner) = value.strip_prefix("grouping(") {
-            if let Some(inner) = inner.strip_suffix(")") {
-                let splits: Vec<&str> = inner.split(',').collect();
-                let stats = StatsType::try_from(splits[0])?;
-                let interval = match splits[1].trim().parse() {
-                    Ok(int) => int,
-                    Err(e) => {
-                        return Err(ParseAnalysisError::InvalidStats(ParseStatsError::from(e)));
-                    }
-                };
-                return Ok(Analyze::Grouping(stats, interval));
-            }
-        }
-
-        if let Some(inner) = value.strip_prefix("trending(") {
-            if let Some(inner) = inner.strip_suffix(")") {
-                let stats = StatsType::try_from(inner)?;
-                return Ok(Analyze::Trending(stats));
-            }
-        }
-
-        if value == "commented" {
-            return Ok(Analyze::Commented);
-        }
-
-        Err(ParseAnalysisError::InvalidFormat)
     }
 }

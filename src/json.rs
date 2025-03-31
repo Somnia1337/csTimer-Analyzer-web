@@ -69,6 +69,7 @@ pub fn extract_records(session: &Value, offset: i64) -> Option<Vec<Record>> {
                 0 => SolveState::Ok,
                 2000 => SolveState::Plus2,
                 -1 => SolveState::Dnf,
+                // todo: plusn
                 _ => return None,
             };
 

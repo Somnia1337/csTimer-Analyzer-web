@@ -3,8 +3,8 @@ use std::io::{self, Write};
 use instant::{Duration, Instant};
 use web_sys::HtmlCanvasElement;
 
-use crate::session::*;
-use crate::types::*;
+use crate::session::Session;
+use crate::types::{Analyze, StatsType, TimeReadable};
 
 /// Appends the data writer path
 /// and the parsed options.
@@ -40,7 +40,7 @@ fn append_analysis_info<W: Write>(
         "Successfully parsed `{}` options (failures ignored and duplicates removed).\n",
         options.len(),
     )?;
-    for a_type in options.iter() {
+    for a_type in options {
         writeln!(writer, "- {}", a_type)?;
     }
     writeln!(writer)?;
@@ -58,7 +58,7 @@ fn append_session_title<W: Write>(writer: &mut W, session: &Session) -> io::Resu
     )
 }
 
-/// Appends the start and end date_times of a session.
+/// Appends the start and end `date_times` of a session.
 fn append_session_date_time<W: Write>(writer: &mut W, session: &Session) -> io::Result<()> {
     let (start, end) = session.date_time();
     writeln!(
@@ -70,7 +70,7 @@ fn append_session_date_time<W: Write>(writer: &mut W, session: &Session) -> io::
 }
 
 /// Appends a quote.
-fn append_message<W: Write>(writer: &mut W, callout_type: &str, content: String) -> io::Result<()> {
+fn append_message<W: Write>(writer: &mut W, callout_type: &str, content: &str) -> io::Result<()> {
     writeln!(writer, "> **{}**: {}\n", callout_type, content)
 }
 
@@ -81,7 +81,7 @@ fn append_image_url<W: Write>(writer: &mut W, url: &str) -> io::Result<()> {
 
 /// Converts canvas to data url.
 fn canvas_to_data_url(canvas: &HtmlCanvasElement) -> String {
-    canvas.to_data_url().unwrap_or_else(|_| String::from(""))
+    canvas.to_data_url().unwrap_or_else(|_| String::new())
 }
 
 // Appends an analysis timing section.
@@ -102,17 +102,17 @@ fn append_section<W: Write>(
         Analyze::Overview => {
             let (best, worst, mean, average) = session.overview();
             let overview = format!(
-                r#"| best | worst | mean | avg |
+                r"| best | worst | mean | avg |
 | :-: | :-: | :-: | :-: |
-| `{}` | `{}` | `{}` | `{}` |"#,
+| `{}` | `{}` | `{}` | `{}` |",
                 best, worst, mean, average,
             );
             let (ok, plus2, dnf) = session.solve_states();
             let total = session.records().len() as f64;
             let solve_states = format!(
-                r#"| Ok | +2 | DNF |
+                r"| Ok | +2 | DNF |
 | :-: | :-: | :-: |
-| `{}` | `{}` `({:.2}%)` | `{}` `({:.2}%)` |"#,
+| `{}` | `{}` `({:.2}%)` | `{}` `({:.2}%)` |",
                 ok,
                 plus2,
                 (plus2 * 100) as f64 / total,
@@ -126,7 +126,13 @@ fn append_section<W: Write>(
             writeln!(writer, "**{}** PB History\n", stats_type)?;
 
             if let Some(pairs) = session.pb_breakers(stats_type) {
-                if !pairs.is_empty() {
+                if pairs.is_empty() {
+                    append_message(
+                        writer,
+                        "error",
+                        &format!("NO PB HISTORIES OF **{}**.", stats_type),
+                    )
+                } else {
                     let pb_history = pairs
                         .iter()
                         .map(|p| p.1.readable())
@@ -147,18 +153,12 @@ fn append_section<W: Write>(
                     }
 
                     Ok(())
-                } else {
-                    append_message(
-                        writer,
-                        "error",
-                        format!("NO PB HISTORIES OF **{}**.", stats_type),
-                    )
                 }
             } else {
                 append_message(
                     writer,
                     "error",
-                    format!("NOT ENOUGH RECORDS FOR **{}** STATISTICS.", stats_type),
+                    &format!("NOT ENOUGH RECORDS FOR **{}** STATISTICS.", stats_type),
                 )
             }
         }
@@ -174,7 +174,7 @@ fn append_section<W: Write>(
             if let Some(groups) = session.try_grouping(*interval) {
                 let desc = stats_type.to_string();
 
-                match session.draw_grouping(canvas, groups, *interval, &desc) {
+                match session.draw_grouping(canvas, &groups, *interval, &desc) {
                     Ok(()) => {
                         let data_url = canvas_to_data_url(canvas);
                         append_image_url(writer, &data_url)
@@ -182,14 +182,14 @@ fn append_section<W: Write>(
                     Err(e) => append_message(
                         writer,
                         "error",
-                        format!("GROUPING BY {}s FAILED: {}.", interval, e),
+                        &format!("GROUPING BY {}s FAILED: {}.", interval, e),
                     ),
                 }
             } else {
                 append_message(
                     writer,
                     "error",
-                    format!("NO DATA FOR GROUPING BY {}s.", interval),
+                    &format!("NO DATA FOR GROUPING BY {}s.", interval),
                 )
             }
         }
@@ -199,7 +199,7 @@ fn append_section<W: Write>(
             if let Some(data) = session.trend(stats_type) {
                 let desc = stats_type.to_string();
 
-                match session.draw_trending(canvas, data, &desc) {
+                match session.draw_trending(canvas, &data, &desc) {
                     Ok(()) => {
                         let data_url = canvas_to_data_url(canvas);
                         append_image_url(writer, &data_url)
@@ -207,14 +207,14 @@ fn append_section<W: Write>(
                     Err(e) => append_message(
                         writer,
                         "error",
-                        format!("SAVING TRENDING CHART FAILED: {}.", e),
+                        &format!("SAVING TRENDING CHART FAILED: {}.", e),
                     ),
                 }
             } else {
                 append_message(
                     writer,
                     "error",
-                    format!("NOT ENOUGH RECORDS FOR **{}** STATISTICS.", stats_type),
+                    &format!("NOT ENOUGH RECORDS FOR **{}** STATISTICS.", stats_type),
                 )
             }
         }
@@ -223,7 +223,9 @@ fn append_section<W: Write>(
             writeln!(writer, "Commented Records\n")?;
 
             let commented = session.commented_records();
-            if !commented.is_empty() {
+            if commented.is_empty() {
+                append_message(writer, "error", "NO COMMENTED RECORD.")?;
+            } else {
                 writeln!(writer, "[#{}] {}", commented[0].0, commented[0].1)?;
 
                 if commented.len() > 1 {
@@ -233,8 +235,6 @@ fn append_section<W: Write>(
                     }
                     writeln!(writer, "</details>\n")?;
                 }
-            } else {
-                append_message(writer, "error", String::from("NO COMMENTED RECORD."))?;
             }
 
             Ok(())
@@ -247,7 +247,7 @@ pub fn analyze<W: Write>(
     sessions: &[Session],
     options: &[Analyze],
     writer: &mut W,
-    canvas: HtmlCanvasElement,
+    canvas: &HtmlCanvasElement,
 ) -> io::Result<()> {
     let overall_timer = Instant::now();
 
@@ -266,7 +266,7 @@ pub fn analyze<W: Write>(
 
         for a_type in options {
             let section_timer = Instant::now();
-            append_section(writer, session, a_type, &canvas)?;
+            append_section(writer, session, a_type, canvas)?;
             append_timing(writer, section_timer.elapsed(), "PARAGRAPH")?;
         }
 

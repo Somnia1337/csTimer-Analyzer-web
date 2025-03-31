@@ -6,8 +6,8 @@ use plotters::prelude::*;
 use plotters_canvas::CanvasBackend;
 use web_sys::HtmlCanvasElement;
 
-use crate::record::*;
-use crate::types::*;
+use crate::record::Record;
+use crate::types::{GroupRecord, Milliseconds, Seconds, SolveState, StatsType, TimeReadable};
 
 /// A training session, same as the "session" in csTimer.
 #[derive(Debug, Clone)]
@@ -177,7 +177,7 @@ impl Session {
                             }
                         })
                         .collect();
-                    chunk.sort();
+                    chunk.sort_unstable();
 
                     Some(
                         chunk.iter().skip(cut_off).take(take).sum::<Milliseconds>()
@@ -225,8 +225,7 @@ impl Session {
     ) -> Option<Vec<(usize, Milliseconds, Rc<Record>)>> {
         let s_scale = match s_type {
             StatsType::Single => 1,
-            StatsType::Average(scale) => *scale,
-            StatsType::Mean(scale) => *scale,
+            StatsType::Average(scale) | StatsType::Mean(scale) => *scale,
         };
 
         if self.records.len() < s_scale {
@@ -250,11 +249,10 @@ impl Session {
 
     /// Stats the whole session by the specified
     /// `StatsType`, providing a trend over time.
-    pub fn trend(&self, s_type: &StatsType) -> Option<Vec<i32>> {
+    pub fn trend(&self, s_type: &StatsType) -> Option<Vec<u32>> {
         let s_scale = match s_type {
             StatsType::Single => 1,
-            StatsType::Average(scale) => *scale,
-            StatsType::Mean(scale) => *scale,
+            StatsType::Average(scale) | StatsType::Mean(scale) => *scale,
         };
 
         if self.records.len() < s_scale {
@@ -264,14 +262,14 @@ impl Session {
         let mut result = Vec::new();
         for (i, _) in self.records.iter().enumerate().skip(s_scale) {
             if let Some(stats) = self.stats(i, s_type) {
-                result.push(stats as i32);
+                result.push(stats);
             }
         }
 
-        if !result.is_empty() {
-            Some(result)
-        } else {
+        if result.is_empty() {
             None
+        } else {
+            Some(result)
         }
     }
 }
@@ -309,7 +307,7 @@ impl Session {
     pub fn draw_grouping(
         &self,
         canvas: &HtmlCanvasElement,
-        groups: Vec<GroupRecord>,
+        groups: &[GroupRecord],
         interval: Milliseconds,
         desc: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
@@ -377,7 +375,7 @@ impl Session {
     pub fn draw_trending(
         &self,
         canvas: &HtmlCanvasElement,
-        data: Vec<i32>,
+        data: &[u32],
         desc: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let n = data.len();

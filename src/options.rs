@@ -1,12 +1,12 @@
-use crate::types::*;
+use crate::types::Analyze;
 
 /// Ignores blank lines and removes
 /// comments from options file.
-fn sanitize_options(options: String) -> Vec<String> {
+fn sanitize_options(options: &str) -> Vec<String> {
     options
         .lines()
         .map(|op| {
-            let end = op.to_string().find("#").unwrap_or(op.len());
+            let end = op.to_string().find('#').unwrap_or(op.len());
             op[0..end].trim().to_string()
         })
         .filter(|op| !op.is_empty())
@@ -14,7 +14,7 @@ fn sanitize_options(options: String) -> Vec<String> {
 }
 
 /// Parses options and removes duplicates.
-pub fn parse_options(options: String) -> Vec<Analyze> {
+pub fn parse_options(options: &str) -> Vec<Analyze> {
     // Sanitizes options
     let options = sanitize_options(options);
 

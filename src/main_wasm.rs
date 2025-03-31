@@ -4,9 +4,9 @@ use pulldown_cmark::{Options, Parser, html};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
-use crate::analyze::*;
-use crate::json::*;
-use crate::options::*;
+use crate::analyze::analyze;
+use crate::json::split_sessions;
+use crate::options::parse_options;
 
 #[wasm_bindgen]
 pub fn analyze_from_files(
@@ -23,14 +23,14 @@ pub fn analyze_from_files(
         .map_err(|e| JsValue::from_str(&format!("Failed to parse data: {}", e)))?;
 
     // Reads and parses options
-    let options = parse_options(options);
+    let options = parse_options(&options);
 
     // Splits sessions
     let sessions = split_sessions(&data);
 
     // Analyzes sessions
     let mut output = Vec::new();
-    analyze(&sessions, &options, &mut output, canvas)
+    analyze(&sessions, &options, &mut output, &canvas)
         .map_err(|e| JsValue::from_str(&format!("Failed to analyze sessions: {}", e)))?;
 
     // Return markdown result

@@ -2,7 +2,7 @@ use std::fmt;
 
 use chrono::DateTime;
 
-use crate::types::*;
+use crate::types::{Milliseconds, SolveState, TimeReadable};
 
 /// A cubing record.
 #[derive(Debug, Clone, PartialEq)]

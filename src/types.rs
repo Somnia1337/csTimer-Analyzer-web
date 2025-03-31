@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 use std::{fmt, rc::Rc};
 
-use crate::errors::*;
-use crate::record::*;
+use crate::errors::{ParseAnalysisError, ParseStatsError};
+use crate::record::Record;
 
 /// Milliseconds in u32.
 pub type Milliseconds = u32;
@@ -11,13 +11,13 @@ pub type Milliseconds = u32;
 pub type Seconds = f32;
 
 /// Milliseconds in a second.
-const SEC: Milliseconds = 1000;
+const SEC: Milliseconds = 1_000;
 
 /// Milliseconds in a minute.
-const MIN: Milliseconds = 60000;
+const MIN: Milliseconds = 60_000;
 
 /// Milliseconds in an hour.
-const HOUR: Milliseconds = 3600000;
+const HOUR: Milliseconds = 3_600_000;
 
 /// Formats a time type into a
 /// human-readable string.
@@ -219,7 +219,7 @@ impl TryFrom<&str> for Analyze {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let mut value = value.trim().to_lowercase();
-        if let Some(i) = value.find("#") {
+        if let Some(i) = value.find('#') {
             value = value[0..i].to_string();
         }
 
@@ -236,7 +236,7 @@ impl TryFrom<&str> for Analyze {
 
         if let Some(inner) = value.strip_prefix("grouping(") {
             if let Some(inner) = inner.strip_suffix(")") {
-                let splits: Vec<&str> = inner.split(",").collect();
+                let splits: Vec<&str> = inner.split(',').collect();
                 let stats = StatsType::try_from(splits[0])?;
                 let interval = match splits[1].trim().parse() {
                     Ok(int) => int,

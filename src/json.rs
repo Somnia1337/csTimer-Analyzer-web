@@ -1,6 +1,6 @@
 use crate::record::Record;
 use crate::session::Session;
-use crate::types::*;
+use crate::types::{Milliseconds, SolveState};
 
 use serde_json::Value;
 use web_sys::js_sys::Date;
@@ -25,7 +25,7 @@ pub fn split_sessions(input: &str) -> Vec<Session> {
     if let Some(obj) = data.as_object() {
         let offset = local_offset_seconds();
 
-        for (key, value) in obj.iter() {
+        for (key, value) in obj {
             if key.starts_with("session") {
                 if let Some(id) = key
                     .strip_prefix("session")
@@ -51,7 +51,7 @@ pub fn split_sessions(input: &str) -> Vec<Session> {
         }
     }
 
-    sessions.sort_unstable_by_key(|s| s.rank());
+    sessions.sort_unstable_by_key(super::session::Session::rank);
 
     sessions
 }
@@ -88,7 +88,7 @@ pub fn extract_records(session: &Value, offset: i64) -> Option<Vec<Record>> {
                 .trim()
                 .replace("\\\"", "\"")
                 .replace("\\\\", "\\")
-                .replace("*", "\\*");
+                .replace('*', "\\*");
             let time_epoch = r.get(3)?.as_i64()?;
 
             Some(Record::new(
@@ -120,24 +120,27 @@ pub fn session_data(json: &Value) -> Vec<(u8, String, usize, (i64, i64))> {
     let mut session_data = Vec::new();
 
     if let Some(obj) = data.as_object() {
-        for (key, value) in obj.iter() {
+        for (key, value) in obj {
             let id: u8 = key.parse().unwrap_or(0);
             let name = value
                 .get("name")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let rank = value.get("rank").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+            let rank = value
+                .get("rank")
+                .and_then(serde_json::Value::as_u64)
+                .unwrap_or(0) as usize;
 
             let date1 = value
                 .get("date")
                 .and_then(|v| v.get(0))
-                .and_then(|v| v.as_i64())
+                .and_then(serde_json::Value::as_i64)
                 .unwrap_or(-1);
             let date2 = value
                 .get("date")
                 .and_then(|v| v.get(1))
-                .and_then(|v| v.as_i64())
+                .and_then(serde_json::Value::as_i64)
                 .unwrap_or(-1);
 
             session_data.push((id, name, rank, (date1, date2)));

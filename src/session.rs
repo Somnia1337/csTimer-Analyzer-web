@@ -169,42 +169,9 @@ impl Session {
         }
     }
 
-    /// Splits records into groups, by a fixed interval.
-    /// Returns `None` if the given interval is not divisible
-    /// by 1000, nor 1000 is divisible by it.
-    pub fn try_grouping(&self, interval: Milliseconds) -> Option<Vec<GroupRecord>> {
-        // todo: reject during parsing
-        if !(interval != 0 && (1000 % interval == 0 || interval % 1000 == 0)) {
-            return None;
-        }
-
-        let (min, max) = self.time_bounds();
-
-        let mut groups = Vec::new();
-
-        for start in (min..max).step_by(interval as usize) {
-            let records: Vec<Rc<Record>> = self
-                .non_dnf_records
-                .iter()
-                .filter(|r| {
-                    let t = r.time();
-                    t >= start && t < start + interval
-                })
-                .cloned()
-                .collect();
-
-            groups.push(GroupRecord::new(start, &records));
-        }
-
-        Some(groups)
-    }
-
     /// Gets all the records that breaks the specified
     /// kind of personal best, along with the new PB.
-    pub fn pb_breakers(
-        &self,
-        s_type: &StatsType,
-    ) -> Option<Vec<(usize, Milliseconds, Rc<Record>)>> {
+    pub fn pbs(&self, s_type: &StatsType) -> Option<Vec<(usize, Milliseconds, Rc<Record>)>> {
         let s_scale = match s_type {
             StatsType::Single => 1,
             StatsType::Average(scale) | StatsType::Mean(scale) => *scale,
@@ -227,6 +194,32 @@ impl Session {
         }
 
         Some(result)
+    }
+
+    /// Splits records into groups, by a fixed interval.
+    /// Returns `None` if the given interval is not divisible
+    /// by 1000, nor 1000 is divisible by it.
+    pub fn group(&self, interval: Milliseconds) -> Vec<GroupRecord> {
+        let (min, mut max) = self.time_bounds();
+        max = min + (max - min).div_ceil(interval) * interval;
+
+        let mut groups = Vec::new();
+
+        for start in (min..max).step_by(interval as usize) {
+            let records: Vec<Rc<Record>> = self
+                .non_dnf_records
+                .iter()
+                .filter(|r| {
+                    let t = r.time();
+                    t >= start && t < start + interval
+                })
+                .cloned()
+                .collect();
+
+            groups.push(GroupRecord::new(start, &records));
+        }
+
+        groups
     }
 
     /// Stats the whole session by the specified
@@ -258,7 +251,7 @@ impl Session {
     /// Returns the best, worst, mean and average
     /// solve times of a session, which could
     /// be "DNF", so they're returned in strings.
-    pub fn overview(&self) -> (String, String, String, String) {
+    pub fn summary(&self) -> (String, String, String, String) {
         let n = self.records.len();
         let (best, worst) = self.best_and_worst();
         let mean = self.mean();
@@ -359,10 +352,10 @@ impl Session {
         canvas: &HtmlCanvasElement,
         data: &[u32],
         desc: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<bool, Box<dyn std::error::Error>> {
         let n = data.len();
         let non_zero_n = data.iter().filter(|x| **x > 0).count();
-        let max = data.iter().max().unwrap();
+        let max = data.iter().max().unwrap_or(&0);
 
         let root = CanvasBackend::with_canvas_object(canvas.clone())
             .ok_or("Failed to acquire canvas backend")?
@@ -370,7 +363,7 @@ impl Session {
         root.fill(&WHITE)?;
 
         let caption = format!(
-            "[#{}] {} {} trending ({} plots)",
+            "[#{}] {} {} trend ({} plots)",
             self.rank, self.name, desc, non_zero_n
         );
 
@@ -390,7 +383,7 @@ impl Session {
             .draw()?;
 
         let mut start = data.iter().position(|x| *x > 0).unwrap_or(n);
-
+        let mut has_inconsistency = false;
         loop {
             let end = data
                 .iter()
@@ -416,11 +409,12 @@ impl Session {
                 .unwrap_or(n - end - 1)
                 + end
                 + 1;
+            has_inconsistency = true;
         }
 
         root.present()?;
 
-        Ok(())
+        Ok(has_inconsistency)
     }
 
     /// Filters the records with a comment.

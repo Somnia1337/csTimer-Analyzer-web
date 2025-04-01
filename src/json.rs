@@ -62,14 +62,13 @@ pub fn extract_records(session: &Value, offset: i64) -> Option<Vec<Record>> {
         .as_array()
         .iter()
         .next()
-        .unwrap()
+        .unwrap_or(&&vec![])
         .iter()
         .map(|r| {
             let mut solve_state = match r.get(0)?.get(0)?.as_i64()? {
                 0 => SolveState::Ok,
                 2000 => SolveState::Plus2,
                 -1 => SolveState::Dnf,
-                // todo: plusn
                 _ => return None,
             };
 
@@ -110,7 +109,7 @@ pub fn session_data(json: &Value) -> Vec<(u8, String, usize, (i64, i64))> {
         return vec![];
     }
 
-    let data_str = props.unwrap().as_str().unwrap_or("{}");
+    let data_str = props.unwrap_or(&Value::Null).as_str().unwrap_or("{}");
     let data: Value = match serde_json::from_str(data_str) {
         Ok(json) => json,
         Err(_) => {

@@ -9,10 +9,6 @@ use crate::analyze::analyze;
 use crate::json::split_sessions;
 use crate::options::parse_options;
 
-// todo: unwrap()s
-
-// todo: leverage browser cache to use without internet
-
 #[wasm_bindgen]
 pub fn analyze_from_files(
     options_txt: &[u8],
@@ -34,7 +30,6 @@ pub fn analyze_from_files(
 
     // Splits sessions
     let sessions = split_sessions(&data);
-    // todo
 
     let parsing_time = parsing_timer.elapsed();
 

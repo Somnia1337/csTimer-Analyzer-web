@@ -69,7 +69,10 @@ impl fmt::Display for Record {
         write!(
             f,
             "@{}\n\n{}- time: `{}`\n- scramble: *{}*\n{}",
-            self.date_time().to_string().strip_suffix(" UTC").unwrap(),
+            self.date_time()
+                .to_string()
+                .strip_suffix(" UTC")
+                .unwrap_or_default(),
             solve_state,
             self.time.to_readable_string(),
             self.scramble,

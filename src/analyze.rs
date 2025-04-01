@@ -7,8 +7,6 @@ use crate::options::{AnalysisOption, StatsType};
 use crate::session::Session;
 use crate::types::TimeReadable;
 
-// todo: W: Write
-
 /// Appends the data writer path
 /// and the parsed options.
 fn append_analysis_info<W: Write>(
@@ -16,8 +14,14 @@ fn append_analysis_info<W: Write>(
     sessions: &[Session],
     record_count: usize,
     options: &[AnalysisOption],
-) -> io::Result<()> {
+) -> io::Result<bool> {
     writeln!(writer, "### Dataset\n")?;
+
+    if sessions.is_empty() {
+        writeln!(writer, "No session parsed successfully.\n")?;
+        return Ok(true);
+    }
+
     writeln!(
         writer,
         "Parsed `{}` sessions (`{}` records).\n",
@@ -38,18 +42,25 @@ fn append_analysis_info<W: Write>(
     writeln!(writer)?;
 
     writeln!(writer, "### Analysis Options\n")?;
+    if options.is_empty() {
+        writeln!(writer, "No option parsed successfully.\n",)?;
+        return Ok(true);
+    }
+
+    let n = options.len();
     writeln!(
         writer,
-        // todo
-        "Successfully parsed `{}` options (failures ignored and duplicates removed).\n",
-        options.len(),
+        "Successfully parsed `{}` option{} (failures ignored and duplicates removed).\n",
+        n,
+        if n == 1 { "" } else { "s" }
     )?;
+
     for a_type in options {
         writeln!(writer, "- {}", a_type)?;
     }
     writeln!(writer)?;
 
-    Ok(())
+    Ok(false)
 }
 
 /// Appends session as a title.
@@ -68,8 +79,8 @@ fn append_session_date_time<W: Write>(writer: &mut W, session: &Session) -> io::
     writeln!(
         writer,
         "{} ~ {}\n",
-        start.to_string().strip_suffix(" UTC").unwrap(),
-        end.to_string().strip_suffix(" UTC").unwrap(),
+        start.to_string().strip_suffix(" UTC").unwrap_or_default(),
+        end.to_string().strip_suffix(" UTC").unwrap_or_default(),
     )
 }
 
@@ -98,11 +109,10 @@ fn append_timings<W: Write>(
     writeln!(writer, "### Debug Info\n")?;
 
     writeln!(writer, "- Parsing data: {:.01?}", parsing_time)?;
-    writeln!(writer, "- Analyzing")?;
+    writeln!(writer, "- Analyzing: {:.01?}", overall_time)?;
     for (rank, timing) in timings {
         writeln!(writer, "\t- Session [#{}]: {:.01?}", rank, timing)?;
     }
-    writeln!(writer, "- Total: {:.01?}", overall_time)?;
 
     Ok(())
 }
@@ -117,9 +127,9 @@ fn append_section<W: Write>(
     write!(writer, "#### ")?;
 
     match a_type {
-        AnalysisOption::Overview => {
-            let (best, worst, mean, average) = session.overview();
-            let overview = format!(
+        AnalysisOption::Summary => {
+            let (best, worst, mean, average) = session.summary();
+            let summary = format!(
                 r"| best | worst | mean | avg |
 | :-: | :-: | :-: | :-: |
 | `{}` | `{}` | `{}` | `{}` |",
@@ -137,13 +147,13 @@ fn append_section<W: Write>(
                 dnf,
                 (dnf * 100) as f64 / total
             );
-            writeln!(writer, "Overview\n\n{}\n\n{}\n", overview, solve_states)
+            writeln!(writer, "{}\n\n{}\n\n{}\n", a_type, summary, solve_states)
         }
 
-        AnalysisOption::PbHistory(stats_type) => {
+        AnalysisOption::Pbs(stats_type) => {
             writeln!(writer, "**{}** PB History\n", stats_type)?;
 
-            if let Some(pairs) = session.pb_breakers(stats_type) {
+            if let Some(pairs) = session.pbs(stats_type) {
                 if pairs.is_empty() {
                     append_message(
                         writer,
@@ -181,7 +191,7 @@ fn append_section<W: Write>(
             }
         }
 
-        AnalysisOption::Grouping(stats_type, interval) => {
+        AnalysisOption::Group(stats_type, interval) => {
             writeln!(
                 writer,
                 "**{}** Grouping by {}s\n",
@@ -189,43 +199,41 @@ fn append_section<W: Write>(
                 *interval as f32 / 1000.0
             )?;
 
-            if let Some(groups) = session.try_grouping(*interval) {
-                let desc = stats_type.to_string();
+            let groups = session.group(*interval);
+            let desc = stats_type.to_string();
 
-                match session.draw_grouping(canvas, &groups, *interval, &desc) {
-                    Ok(()) => {
-                        let data_url = canvas_to_data_url(canvas);
-                        append_image_url(writer, &data_url)
-                    }
-                    Err(e) => append_message(
-                        writer,
-                        "error",
-                        &format!("GROUPING BY {}s FAILED: {}.", interval, e),
-                    ),
+            match session.draw_grouping(canvas, &groups, *interval, &desc) {
+                Ok(()) => {
+                    let data_url = canvas_to_data_url(canvas);
+                    append_image_url(writer, &data_url)
                 }
-            } else {
-                append_message(
+                Err(e) => append_message(
                     writer,
                     "error",
-                    &format!("NO DATA FOR GROUPING BY {}s.", interval),
-                )
+                    &format!("GROUPING BY {}s FAILED: {}.", interval, e),
+                ),
             }
         }
 
-        AnalysisOption::Trending(stats_type) => {
+        AnalysisOption::Trend(stats_type) => {
             writeln!(writer, "**{}** Trending\n", stats_type)?;
             if let Some(data) = session.trend(stats_type) {
                 let desc = stats_type.to_string();
 
                 match session.draw_trending(canvas, &data, &desc) {
-                    Ok(()) => {
+                    Ok(has_inconsistency) => {
                         let data_url = canvas_to_data_url(canvas);
                         append_image_url(writer, &data_url)?;
-                        append_message(
-                            writer,
-                            "info",
-                            "The inconsistencies are from a feature starting at v0.6.0, where DNFs are treated as empty points. 断点是 v0.6.0 的新特性，DNF 被绘制为空点。",
-                        )
+
+                        if has_inconsistency {
+                            append_message(
+                                writer,
+                                "info",
+                                "The inconsistencies are due to DNFs treated as empty points. 断点是由于 DNF 被绘制为空点。",
+                            )
+                        } else {
+                            Ok(())
+                        }
                     }
                     Err(e) => append_message(
                         writer,
@@ -273,14 +281,21 @@ pub fn analyze<W: Write>(
     canvas: &HtmlCanvasElement,
     parsing_time: Duration,
 ) -> io::Result<()> {
-    let overall_timer = Instant::now();
+    let analysis_timer = Instant::now();
 
-    append_analysis_info(
+    match append_analysis_info(
         writer,
         sessions,
         sessions.iter().map(|s| s.records().len()).sum::<usize>(),
         options,
-    )?;
+    ) {
+        Ok(empty) => {
+            if empty {
+                return Ok(());
+            }
+        }
+        Err(e) => return Err(e),
+    }
 
     let mut timings = Vec::with_capacity(sessions.len());
 
@@ -292,15 +307,16 @@ pub fn analyze<W: Write>(
 
         if session.non_dnf_records().is_empty() {
             append_message(writer, "error", "Every record is DNF")?;
-        }
-        for a_type in options {
-            append_section(writer, session, a_type, canvas)?;
+        } else {
+            for a_type in options {
+                append_section(writer, session, a_type, canvas)?;
+            }
         }
 
         timings.push((session.rank(), session_timer.elapsed()));
     }
 
-    append_timings(writer, parsing_time, &timings, overall_timer.elapsed())?;
+    append_timings(writer, parsing_time, &timings, analysis_timer.elapsed())?;
 
     Ok(())
 }

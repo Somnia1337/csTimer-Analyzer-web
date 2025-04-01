@@ -70,28 +70,22 @@ impl TryFrom<&str> for StatsType {
 
 /// Option of a single analysis.
 pub enum AnalysisOption {
-    Overview,
-    // todo: rename? Pbs
-    PbHistory(StatsType),
-    Grouping(StatsType, Milliseconds),
-    Trending(StatsType),
-    // todo: rename Comments
+    Summary,
+    Pbs(StatsType),
+    Group(StatsType, Milliseconds),
+    Trend(StatsType),
     Commented,
 }
 
 impl fmt::Display for AnalysisOption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let label = match self {
-            AnalysisOption::Overview => String::from("Overview"),
-            AnalysisOption::PbHistory(stats_type) => format!("PbHistory({})", stats_type),
-            AnalysisOption::Grouping(stats_type, interval) => {
-                format!(
-                    "Grouping({}, by {}s)",
-                    stats_type,
-                    *interval as f32 / 1000.0
-                )
+            AnalysisOption::Summary => String::from("Summary"),
+            AnalysisOption::Pbs(stats_type) => format!("PBs({})", stats_type),
+            AnalysisOption::Group(stats_type, interval) => {
+                format!("Group({}, by {}s)", stats_type, *interval as f32 / 1000.0)
             }
-            AnalysisOption::Trending(stats_type) => format!("Trending({})", stats_type),
+            AnalysisOption::Trend(stats_type) => format!("Trend({})", stats_type),
             AnalysisOption::Commented => String::from("Commented"),
         };
 
@@ -105,18 +99,18 @@ impl TryFrom<&str> for AnalysisOption {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let value = value.trim().to_lowercase();
 
-        if value == "overview" {
-            return Ok(AnalysisOption::Overview);
+        if value == "summary" {
+            return Ok(AnalysisOption::Summary);
         }
 
-        if let Some(inner) = value.strip_prefix("pbhistory(") {
+        if let Some(inner) = value.strip_prefix("pbs(") {
             if let Some(inner) = inner.strip_suffix(")") {
                 let stats = StatsType::try_from(inner)?;
-                return Ok(AnalysisOption::PbHistory(stats));
+                return Ok(AnalysisOption::Pbs(stats));
             }
         }
 
-        if let Some(inner) = value.strip_prefix("grouping(") {
+        if let Some(inner) = value.strip_prefix("group(") {
             if let Some(inner) = inner.strip_suffix(")") {
                 let splits: Vec<&str> = inner.split(',').collect();
                 let stats = StatsType::try_from(splits[0])?;
@@ -126,14 +120,14 @@ impl TryFrom<&str> for AnalysisOption {
                         return Err(ParseAnalysisError::InvalidStats(ParseStatsError::from(e)));
                     }
                 };
-                return Ok(AnalysisOption::Grouping(stats, interval));
+                return Ok(AnalysisOption::Group(stats, interval));
             }
         }
 
-        if let Some(inner) = value.strip_prefix("trending(") {
+        if let Some(inner) = value.strip_prefix("trend(") {
             if let Some(inner) = inner.strip_suffix(")") {
                 let stats = StatsType::try_from(inner)?;
-                return Ok(AnalysisOption::Trending(stats));
+                return Ok(AnalysisOption::Trend(stats));
             }
         }
 

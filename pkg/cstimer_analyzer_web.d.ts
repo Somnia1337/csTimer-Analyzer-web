@@ -1,6 +1,14 @@
 /* tslint:disable */
 /* eslint-disable */
+/**
+ * The entrance function of WASM, analyzes
+ * the data provided with options.
+ */
 export function analyze_from_files(options_txt: Uint8Array, data_txt: Uint8Array, canvas: HTMLCanvasElement): any;
+/**
+ * Converts the markdown content to HTML,
+ * a faster equivalent to marked.js.
+ */
 export function render_markdown(input: string): any;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;

@@ -180,6 +180,8 @@ function takeFromExternrefTable0(idx) {
     return value;
 }
 /**
+ * The entrance function of WASM, analyzes
+ * the data provided with options.
  * @param {Uint8Array} options_txt
  * @param {Uint8Array} data_txt
  * @param {HTMLCanvasElement} canvas
@@ -198,6 +200,8 @@ export function analyze_from_files(options_txt, data_txt, canvas) {
 }
 
 /**
+ * Converts the markdown content to HTML,
+ * a faster equivalent to marked.js.
  * @param {string} input
  * @returns {any}
  */

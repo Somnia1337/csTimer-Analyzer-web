@@ -1,14 +1,15 @@
+use std::cmp::Ordering;
 use std::convert::TryFrom;
 use std::fmt;
+use std::num::ParseIntError;
 
-use crate::errors::{ParseAnalysisError, ParseStatsError};
-use crate::types::Milliseconds;
+use crate::time::Milliseconds;
 
 /// The scale(number) of statistics.
 type StatsScale = usize;
 
 /// The type of statistics.
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum StatsType {
     /// A single solve.
     Single,
@@ -17,7 +18,7 @@ pub enum StatsType {
     Mean(StatsScale),
 
     /// The cutoff average of some solves,
-    /// cutting off at least 5% records at both ends,
+    /// cutting off at least 5% records on both ends,
     /// up to 5% DNFs are allowed.
     Average(StatsScale),
 }
@@ -35,7 +36,7 @@ impl fmt::Display for StatsType {
 }
 
 impl TryFrom<&str> for StatsType {
-    type Error = ParseStatsError;
+    type Error = ParseStatsTypeError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let value = value.trim().to_lowercase();
@@ -47,33 +48,85 @@ impl TryFrom<&str> for StatsType {
         if let Some(inner) = value.strip_prefix("mo") {
             let scale = inner.parse::<StatsScale>()?;
 
-            return if scale > 0 {
-                Ok(StatsType::Mean(scale))
-            } else {
-                Err(ParseStatsError::ScaleIsZero)
+            return match scale.cmp(&1) {
+                Ordering::Less => Err(ParseStatsTypeError::ScaleIsZero),
+                Ordering::Equal => Ok(StatsType::Single),
+                Ordering::Greater => Ok(StatsType::Mean(scale)),
             };
         }
 
         if let Some(inner) = value.strip_prefix("ao") {
             let scale = inner.parse::<StatsScale>()?;
 
-            return if scale > 0 {
-                Ok(StatsType::Average(scale))
-            } else {
-                Err(ParseStatsError::ScaleIsZero)
+            return match scale.cmp(&1) {
+                Ordering::Less => Err(ParseStatsTypeError::ScaleIsZero),
+                Ordering::Equal => Ok(StatsType::Single),
+                Ordering::Greater => Ok(StatsType::Average(scale)),
             };
         }
 
-        Err(ParseStatsError::InvalidFormat)
+        Err(ParseStatsTypeError::InvalidFormat)
+    }
+}
+
+impl StatsType {
+    /// Returns the scale of the stats type.
+    pub fn scale(&self) -> StatsScale {
+        match self {
+            StatsType::Single => 1,
+            StatsType::Average(scale) | StatsType::Mean(scale) => *scale,
+        }
+    }
+}
+
+/// An error which can be returned
+/// when parsing a `StatsType`.
+pub enum ParseStatsTypeError {
+    /// Unknown format.
+    InvalidFormat,
+
+    /// Parsing integer failed.
+    InvalidScale(ParseIntError),
+
+    /// Stats scale is 0.
+    ScaleIsZero,
+}
+
+impl From<ParseIntError> for ParseStatsTypeError {
+    fn from(err: ParseIntError) -> Self {
+        ParseStatsTypeError::InvalidScale(err)
+    }
+}
+
+impl fmt::Display for ParseStatsTypeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let literal = match self {
+            Self::InvalidFormat => String::from("invalid stats format"),
+            Self::InvalidScale(err) => format!("failed to parse int: {}", err),
+            Self::ScaleIsZero => String::from("scale must be greater than 0"),
+        };
+
+        write!(f, "{}", literal)
     }
 }
 
 /// Option of a single analysis.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AnalysisOption {
+    /// A summary over solve times in the session.
     Summary,
+
+    /// PB histories of some stats type.
     Pbs(StatsType),
+
+    /// Groups of solve times of some stats type,
+    /// by some time interval between groups.
     Group(StatsType, Milliseconds),
+
+    /// Trends of solve times of some stats type.
     Trend(StatsType),
+
+    /// `Record`s that has a non-empty comment.
     Commented,
 }
 
@@ -81,11 +134,15 @@ impl fmt::Display for AnalysisOption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let label = match self {
             AnalysisOption::Summary => String::from("Summary"),
-            AnalysisOption::Pbs(stats_type) => format!("PBs({})", stats_type),
+            AnalysisOption::Pbs(stats_type) => format!("PBs(**{}**)", stats_type),
             AnalysisOption::Group(stats_type, interval) => {
-                format!("Group({}, by {}s)", stats_type, *interval as f32 / 1000.0)
+                format!(
+                    "Group(**{}**, by {}s)",
+                    stats_type,
+                    *interval as f32 / 1000.0
+                )
             }
-            AnalysisOption::Trend(stats_type) => format!("Trend({})", stats_type),
+            AnalysisOption::Trend(stats_type) => format!("Trend(**{}**)", stats_type),
             AnalysisOption::Commented => String::from("Commented"),
         };
 
@@ -94,11 +151,9 @@ impl fmt::Display for AnalysisOption {
 }
 
 impl TryFrom<&str> for AnalysisOption {
-    type Error = ParseAnalysisError;
+    type Error = ParseAnalysisOptionError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let value = value.trim().to_lowercase();
-
         if value == "summary" {
             return Ok(AnalysisOption::Summary);
         }
@@ -117,7 +172,9 @@ impl TryFrom<&str> for AnalysisOption {
                 let interval = match splits[1].trim().parse() {
                     Ok(int) => int,
                     Err(e) => {
-                        return Err(ParseAnalysisError::InvalidStats(ParseStatsError::from(e)));
+                        return Err(ParseAnalysisOptionError::InvalidStats(
+                            ParseStatsTypeError::from(e),
+                        ));
                     }
                 };
                 return Ok(AnalysisOption::Group(stats, interval));
@@ -135,35 +192,43 @@ impl TryFrom<&str> for AnalysisOption {
             return Ok(AnalysisOption::Commented);
         }
 
-        Err(ParseAnalysisError::InvalidFormat)
+        Err(ParseAnalysisOptionError::InvalidFormat)
     }
 }
 
-/// Ignores blank lines and removes
-/// comments from options file.
-fn sanitize_options(options: &str) -> Vec<String> {
-    options
-        .lines()
-        .map(|op| {
-            let end = op.to_string().find('#').unwrap_or(op.len());
-            op[0..end].trim().to_string()
-        })
-        .filter(|op| !op.is_empty())
-        .collect()
+impl AnalysisOption {
+    /// Returns the stats type of the analysis option.
+    pub fn stats_type(&self) -> Option<&StatsType> {
+        match self {
+            Self::Pbs(s_type) | Self::Group(s_type, _) | Self::Trend(s_type) => Some(s_type),
+            _ => None,
+        }
+    }
 }
 
-/// Parses options and removes duplicates.
-pub fn parse_options(options: &str) -> Vec<AnalysisOption> {
-    // Sanitizes options
-    let options = sanitize_options(options);
+/// An error which can be returned
+/// when parsing an analysis option.
+pub enum ParseAnalysisOptionError {
+    /// Unknown format.
+    InvalidFormat,
 
-    // Removes duplicates
-    let mut seen = std::collections::HashSet::new();
-    let options: Vec<AnalysisOption> = options
-        .into_iter()
-        .filter(|s| seen.insert(s.clone()))
-        .filter_map(|s| AnalysisOption::try_from(s.as_str()).ok())
-        .collect();
+    /// Parsing stats type failed.
+    InvalidStats(ParseStatsTypeError),
+}
 
-    options
+impl From<ParseStatsTypeError> for ParseAnalysisOptionError {
+    fn from(err: ParseStatsTypeError) -> Self {
+        ParseAnalysisOptionError::InvalidStats(err)
+    }
+}
+
+impl fmt::Display for ParseAnalysisOptionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let literal = match self {
+            Self::InvalidFormat => String::from("invalid format"),
+            Self::InvalidStats(e) => format!("invalid stats param: {}", e),
+        };
+
+        write!(f, "{}", literal)
+    }
 }

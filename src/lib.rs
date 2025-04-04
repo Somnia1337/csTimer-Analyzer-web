@@ -1,8 +1,6 @@
 pub mod analyze;
 
-pub mod errors;
-
-pub mod json;
+pub mod parser;
 
 pub mod main_wasm;
 
@@ -12,4 +10,6 @@ pub mod record;
 
 pub mod session;
 
-pub mod types;
+pub mod stats;
+
+pub mod time;

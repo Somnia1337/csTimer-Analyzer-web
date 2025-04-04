@@ -2,7 +2,50 @@ use std::fmt;
 
 use chrono::DateTime;
 
-use crate::types::{Milliseconds, SolveState, TimeReadable};
+use crate::time::{HumanReadable, Milliseconds};
+
+/// Valid states of a solve,
+/// same as the "state" in csTimer.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum SolveState {
+    /// No penalty.
+    Ok,
+
+    /// Plus 2 seconds.
+    Plus2,
+
+    /// Did not finish.
+    Dnf,
+}
+
+impl fmt::Display for SolveState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let literal = match self {
+            SolveState::Ok => "Ok",
+            SolveState::Plus2 => "+2",
+            SolveState::Dnf => "DNF",
+        };
+
+        write!(f, "{}", literal)
+    }
+}
+
+impl SolveState {
+    /// Returns true if state is Ok.
+    pub fn is_ok(self) -> bool {
+        matches!(self, SolveState::Ok)
+    }
+
+    /// Returns true if state is Plus2.
+    pub fn is_plus2(self) -> bool {
+        matches!(self, SolveState::Plus2)
+    }
+
+    /// Returns true if state is Dnf.
+    pub fn is_dnf(self) -> bool {
+        matches!(self, SolveState::Dnf)
+    }
+}
 
 /// A cubing record.
 #[derive(Debug, Clone, PartialEq)]
@@ -15,7 +58,8 @@ pub struct Record {
 }
 
 impl Record {
-    pub fn new(
+    /// Creates a new `Record` from its fields.
+    pub fn from(
         solve_state: SolveState,
         time: Milliseconds,
         scramble: String,
@@ -31,24 +75,29 @@ impl Record {
         }
     }
 
-    pub fn solve_state(&self) -> &SolveState {
-        &self.solve_state
+    /// The solve state of a `Record`.
+    pub fn solve_state(&self) -> SolveState {
+        self.solve_state
     }
 
+    /// The time of a `Record`.
     pub fn time(&self) -> Milliseconds {
         self.time
     }
 
+    /// The scramble of a `Record`.
     pub fn scramble(&self) -> &str {
         &self.scramble
     }
 
+    /// The comment of a `Record`.
     pub fn comment(&self) -> &str {
         &self.comment
     }
 
+    /// The date-time of a `Record`, in `chrono::DateTime`.
     pub fn date_time(&self) -> DateTime<chrono::Utc> {
-        DateTime::from_timestamp(self.date_time, 0).expect("time goes backwards")
+        DateTime::from_timestamp(self.date_time, 0).unwrap_or_default()
     }
 }
 

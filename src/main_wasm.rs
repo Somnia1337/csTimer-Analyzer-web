@@ -6,9 +6,10 @@ use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
 use crate::analyze::analyze;
-use crate::json::split_sessions;
-use crate::options::parse_options;
+use crate::parser::{parse_options, parse_sessions};
 
+/// The entrance function of WASM, analyzes
+/// the data provided with options.
 #[wasm_bindgen]
 pub fn analyze_from_files(
     options_txt: &[u8],
@@ -29,7 +30,7 @@ pub fn analyze_from_files(
     let options = parse_options(&options);
 
     // Splits sessions
-    let sessions = split_sessions(&data);
+    let sessions = parse_sessions(&data);
 
     let parsing_time = parsing_timer.elapsed();
 
@@ -45,6 +46,8 @@ pub fn analyze_from_files(
     Ok(JsValue::from_str(&analysis))
 }
 
+/// Converts the markdown content to HTML,
+/// a faster equivalent to marked.js.
 #[wasm_bindgen]
 pub fn render_markdown(input: &str) -> JsValue {
     let mut options = Options::empty();

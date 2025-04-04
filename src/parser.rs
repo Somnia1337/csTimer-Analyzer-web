@@ -1,6 +1,7 @@
-use crate::record::Record;
+use crate::options::AnalysisOption;
+use crate::record::{Record, SolveState};
 use crate::session::Session;
-use crate::types::{Milliseconds, SolveState};
+use crate::time::Milliseconds;
 
 use serde_json::Value;
 use web_sys::js_sys::Date;
@@ -10,18 +11,18 @@ fn local_offset_seconds() -> i64 {
     -Date::new_0().get_timezone_offset() as i64 * 60
 }
 
-/// Splits sessions and parse every record within.
-pub fn split_sessions(input: &str) -> Vec<Session> {
+/// Parses sessions and records within.
+pub fn parse_sessions(input: &str) -> Vec<Session> {
     let data: Value = match serde_json::from_str(input) {
         Ok(json) => json,
         Err(_) => {
-            return vec![];
+            return Vec::new();
         }
     };
 
-    let session_data = session_data(&data);
+    let session_metadata = parse_session_metadata(&data);
 
-    let mut sessions = vec![];
+    let mut sessions = Vec::new();
     if let Some(obj) = data.as_object() {
         let offset = local_offset_seconds();
 
@@ -29,22 +30,22 @@ pub fn split_sessions(input: &str) -> Vec<Session> {
             if key.starts_with("session") {
                 if let Some(id) = key
                     .strip_prefix("session")
-                    .and_then(|s| s.parse::<u8>().ok())
+                    .and_then(|id| id.parse::<usize>().ok())
                 {
-                    if let Some(records) = extract_records(value, offset) {
-                        if records.is_empty() {
-                            continue;
-                        }
-                        if let Some((_, name, rank, date_time)) =
-                            session_data.iter().find(|(sid, _, _, _)| *sid == id)
-                        {
-                            sessions.push(Session::new(
-                                *rank,
-                                name.clone(),
-                                (date_time.0 + offset, date_time.1 + offset),
-                                &records,
-                            ));
-                        }
+                    let records = parse_records(value, offset);
+                    if records.is_empty() {
+                        continue;
+                    }
+
+                    if let Some((_, name, rank, date_time)) =
+                        session_metadata.iter().find(|(sid, _, _, _)| *sid == id)
+                    {
+                        sessions.push(Session::from(
+                            *rank,
+                            name.clone(),
+                            (date_time.0 + offset, date_time.1 + offset),
+                            &records,
+                        ));
                     }
                 }
             }
@@ -57,14 +58,14 @@ pub fn split_sessions(input: &str) -> Vec<Session> {
 }
 
 /// Parses records in a session.
-pub fn extract_records(session: &Value, offset: i64) -> Option<Vec<Record>> {
+pub fn parse_records(session: &Value, offset: i64) -> Vec<Record> {
     session
         .as_array()
         .iter()
         .next()
-        .unwrap_or(&&vec![])
+        .unwrap_or(&&Vec::new())
         .iter()
-        .map(|r| {
+        .filter_map(|r| {
             let mut solve_state = match r.get(0)?.get(0)?.as_i64()? {
                 0 => SolveState::Ok,
                 2000 => SolveState::Plus2,
@@ -91,7 +92,7 @@ pub fn extract_records(session: &Value, offset: i64) -> Option<Vec<Record>> {
                 .replace('*', "\\*");
             let time_epoch = r.get(3)?.as_i64()?;
 
-            Some(Record::new(
+            Some(Record::from(
                 solve_state,
                 time_millis as Milliseconds,
                 scramble,
@@ -102,18 +103,21 @@ pub fn extract_records(session: &Value, offset: i64) -> Option<Vec<Record>> {
         .collect()
 }
 
-// Parses metadata for every session.
-pub fn session_data(json: &Value) -> Vec<(u8, String, usize, (i64, i64))> {
-    let props = json.get("properties").and_then(|p| p.get("sessionData"));
-    if props.is_none() {
-        return vec![];
+/// Parses metadata for every session.
+pub fn parse_session_metadata(json: &Value) -> Vec<(usize, String, usize, (i64, i64))> {
+    let session_data = json.get("properties").and_then(|p| p.get("sessionData"));
+    if session_data.is_none() {
+        return Vec::new();
     }
 
-    let data_str = props.unwrap_or(&Value::Null).as_str().unwrap_or("{}");
+    let data_str = session_data
+        .unwrap_or(&Value::Null)
+        .as_str()
+        .unwrap_or("{}");
     let data: Value = match serde_json::from_str(data_str) {
         Ok(json) => json,
         Err(_) => {
-            return vec![];
+            return Vec::new();
         }
     };
 
@@ -121,31 +125,60 @@ pub fn session_data(json: &Value) -> Vec<(u8, String, usize, (i64, i64))> {
 
     if let Some(obj) = data.as_object() {
         for (key, value) in obj {
-            let id: u8 = key.parse().unwrap_or(0);
+            let id: usize = key.parse().unwrap_or_default();
             let name = value
                 .get("name")
                 .and_then(|v| v.as_str())
-                .unwrap_or("")
+                .unwrap_or_default()
                 .to_string();
             let rank = value
                 .get("rank")
                 .and_then(serde_json::Value::as_u64)
-                .unwrap_or(0) as usize;
+                .unwrap_or_default() as usize;
 
             let date1 = value
                 .get("date")
                 .and_then(|v| v.get(0))
                 .and_then(serde_json::Value::as_i64)
-                .unwrap_or(-1);
+                .unwrap_or_default();
             let date2 = value
                 .get("date")
                 .and_then(|v| v.get(1))
                 .and_then(serde_json::Value::as_i64)
-                .unwrap_or(-1);
+                .unwrap_or_default();
 
             session_data.push((id, name, rank, (date1, date2)));
         }
     }
 
     session_data
+}
+
+/// Ignores blank lines and removes
+/// comments from options file.
+fn sanitize_options(options: &str) -> Vec<String> {
+    options
+        .lines()
+        .map(|op| {
+            let end = op.to_string().find('#').unwrap_or(op.len());
+            op[0..end].trim().to_lowercase()
+        })
+        .filter(|op| !op.is_empty())
+        .collect()
+}
+
+/// Parses options and removes duplicates.
+pub fn parse_options(options: &str) -> Vec<AnalysisOption> {
+    // Sanitizes options
+    let options = sanitize_options(options);
+
+    // Removes duplicates
+    let mut seen = std::collections::HashSet::with_capacity(options.len());
+    let options: Vec<AnalysisOption> = options
+        .into_iter()
+        .filter_map(|s| AnalysisOption::try_from(s.as_str()).ok())
+        .filter(|s| seen.insert(s.clone()))
+        .collect();
+
+    options
 }

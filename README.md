@@ -25,15 +25,15 @@ Features:
 
 The analyzer reads your options from the textarea, here's how to write it.
 
-- `Summary`: Provides an summary of a session, including best and worst times, mean and average, and counts of `+2`s and `DNF`s.
+- `summary`: Provides an summary of a session, including best and worst times, mean and average, and counts of `+2`s and `DNF`s.
 - `stats`: The metric of statistics, choose one of these:
   - `single`: single solves
   - `mo{n}`: mean of `n` solves
   - `ao{n}`: average of `n` solves
-- `PBs(stats)`: Tracks your personal best history for `stats` over time.
-- `Group(stats, millis)`: Groups `stats` into intervals of `millis` milliseconds, producing a histogram.
-- `Trend(stats)`: Tracks the trend of `stats`, generating a trend chart.
-- `Commented`: Filters records with a comment(maybe useful if you comment when skipping OLL/PLL).
+- `pbs(stats)`: Tracks your personal best history for `stats` over time.
+- `group(stats, millis)`: Groups `stats` into intervals of `millis` milliseconds, producing a histogram.
+- `trend(stats)`: Tracks the trend of `stats`, generating a trend chart.
+- `commented`: Filters records with a comment(maybe useful if you comment when skipping OLL/PLL).
 
 Check below for a real example of options.
 
@@ -41,21 +41,28 @@ Check below for a real example of options.
 # Comment starts with '#'
 
 # Summary
-Summary
+summary
 
 # Pb histories
-PBs(single)
-PBs(mo5)
-PBs(ao50)
+pbs(single)
+pbs(mo5)
+pbs(ao50)
 
 # Grouping histograms
-Group(single, 500)  # 500ms
-Group(single, 1000) # 1000ms
+group(single, 500)  # 500ms
+group(single, 1000) # 1000ms
 
 # Trending charts
-Trend(mo5)
-Trend(ao200)
+trend(mo5)
+trend(ao200)
 
 # Commented records
-Commented
+commented
 ```
+
+### Todo
+
+- feat:
+    - i18n.
+    - shows report half-blockingly (refreshes after analyzing a session).
+- docs: add `changelog.md`.

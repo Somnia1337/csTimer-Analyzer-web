@@ -2,13 +2,9 @@ use std::fmt;
 use std::rc::Rc;
 
 use chrono::DateTime;
-use plotters::prelude::*;
-use plotters_canvas::CanvasBackend;
-use web_sys::HtmlCanvasElement;
 
-use crate::options::StatsType;
 use crate::record::Record;
-use crate::types::{GroupRecord, Milliseconds, Seconds, SolveState, TimeReadable};
+use crate::time::Milliseconds;
 
 /// A training session, same as the "session" in csTimer.
 #[derive(Debug, Clone)]
@@ -17,13 +13,14 @@ pub struct Session {
     name: String,
     date_time: (i64, i64),
     records: Vec<Rc<Record>>,
-    non_dnf_records: Vec<Rc<Record>>,
+    records_not_dnf: Vec<Rc<Record>>,
 }
 
 impl Session {
-    pub fn new(rank: usize, name: String, date_time: (i64, i64), records: &[Record]) -> Self {
+    /// Creates a new `Session` from its fields.
+    pub fn from(rank: usize, name: String, date_time: (i64, i64), records: &[Record]) -> Self {
         let records: Vec<Rc<Record>> = records.iter().cloned().map(Rc::new).collect();
-        let non_dnf_records = records
+        let records_not_dnf = records
             .iter()
             .filter(|r| !r.solve_state().is_dnf())
             .cloned()
@@ -34,31 +31,37 @@ impl Session {
             name,
             date_time,
             records,
-            non_dnf_records,
+            records_not_dnf,
         }
     }
 
+    /// The name of a `Session`.
     pub fn name(&self) -> &str {
         &self.name
     }
 
+    /// The rank of a `Session`.
     pub fn rank(&self) -> usize {
         self.rank
     }
 
+    /// The start and end date-times of a `Session`,
+    /// both in `chrono::DateTime`.
     pub fn date_time(&self) -> (DateTime<chrono::Utc>, DateTime<chrono::Utc>) {
         (
-            DateTime::from_timestamp(self.date_time.0, 0).expect("time goes backwards"),
-            DateTime::from_timestamp(self.date_time.1, 0).expect("time goes backwards"),
+            DateTime::from_timestamp(self.date_time.0, 0).unwrap_or_default(),
+            DateTime::from_timestamp(self.date_time.1, 0).unwrap_or_default(),
         )
     }
 
+    /// The records of a `Session`.
     pub fn records(&self) -> &[Rc<Record>] {
         &self.records
     }
 
-    pub fn non_dnf_records(&self) -> &[Rc<Record>] {
-        &self.non_dnf_records
+    /// The records of a `Session` that are not DNF.
+    pub fn records_not_dnf(&self) -> &[Rc<Record>] {
+        &self.records_not_dnf
     }
 }
 
@@ -66,7 +69,7 @@ impl fmt::Display for Session {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(
             f,
-            "[#{}] {} (`{}` records)",
+            "[#{}] **{}** (`{}` records)",
             self.rank(),
             self.name(),
             self.records().len(),
@@ -74,356 +77,5 @@ impl fmt::Display for Session {
     }
 }
 
-impl Session {
-    /// Best and worst non-DNF solve times,
-    /// in milliseconds.
-    fn best_and_worst(&self) -> (Milliseconds, Milliseconds) {
-        self.non_dnf_records
-            .iter()
-            .map(|r| r.time())
-            .fold((u32::MAX, u32::MIN), |(best, worst), time| {
-                (best.min(time), worst.max(time))
-            })
-    }
-
-    /// Bounds of non-DNF solve times in seconds,
-    /// padding on both ends.
-    fn time_bounds(&self) -> (Milliseconds, Milliseconds) {
-        let (best, worst) = self.best_and_worst();
-
-        (((best / 1000).max(1) - 1) * 1000, (worst / 1000 + 1) * 1000)
-    }
-
-    /// Mean of non-DNF solve times.
-    fn mean(&self) -> Milliseconds {
-        let sum: Milliseconds = self.non_dnf_records.iter().map(|r| r.time()).sum();
-
-        (sum as f32 / self.non_dnf_records.len() as f32).round() as Milliseconds
-    }
-
-    /// Count of solves that has
-    /// the specified `SolveState`.
-    fn count_solve_state(&self, is_state: &dyn Fn(&SolveState) -> bool) -> usize {
-        self.records
-            .iter()
-            .filter(|r| is_state(r.solve_state()))
-            .count()
-    }
-
-    /// Stats a single solve, or the
-    /// mean or average of solves.
-    fn stats(&self, pos: usize, s_type: &StatsType) -> Option<Milliseconds> {
-        match s_type {
-            StatsType::Single => {
-                let r = &self.records[pos];
-
-                if r.solve_state().is_dnf() {
-                    None
-                } else {
-                    Some(r.time())
-                }
-            }
-
-            StatsType::Mean(s_scale) => {
-                let chunk = &self.records[pos - s_scale + 1..=pos];
-
-                if chunk.iter().any(|r| r.solve_state().is_dnf()) {
-                    None
-                } else {
-                    Some(
-                        (chunk.iter().map(|r| r.time()).sum::<Milliseconds>() as f32
-                            / *s_scale as f32)
-                            .round() as Milliseconds,
-                    )
-                }
-            }
-
-            StatsType::Average(s_scale) => {
-                let chunk = &self.records[(pos + 1).saturating_sub(*s_scale)..=pos];
-                let cut_off = (*s_scale as f32 * 0.05).ceil() as usize;
-                let take = s_scale.saturating_sub(cut_off * 2);
-
-                if take == 0 || chunk.iter().filter(|r| r.solve_state().is_dnf()).count() > cut_off
-                {
-                    None
-                } else {
-                    let mut chunk: Vec<Milliseconds> = chunk
-                        .iter()
-                        .map(|r| {
-                            if r.solve_state().is_dnf() {
-                                u32::MAX
-                            } else {
-                                r.time()
-                            }
-                        })
-                        .collect();
-                    chunk.sort_unstable();
-
-                    Some(
-                        (chunk.iter().skip(cut_off).take(take).sum::<Milliseconds>() as f64
-                            / take as f64)
-                            .round() as Milliseconds,
-                    )
-                }
-            }
-        }
-    }
-
-    /// Gets all the records that breaks the specified
-    /// kind of personal best, along with the new PB.
-    pub fn pbs(&self, s_type: &StatsType) -> Option<Vec<(usize, Milliseconds, Rc<Record>)>> {
-        let s_scale = match s_type {
-            StatsType::Single => 1,
-            StatsType::Average(scale) | StatsType::Mean(scale) => *scale,
-        };
-
-        if self.records.len() < s_scale {
-            return None;
-        }
-
-        let mut pb = u32::MAX;
-
-        let mut result = Vec::new();
-        for (i, record) in self.records.iter().enumerate().skip(s_scale) {
-            if let Some(stats) = self.stats(i, s_type) {
-                if stats < pb {
-                    pb = stats;
-                    result.push((i + 1, pb, record.clone()));
-                }
-            }
-        }
-
-        Some(result)
-    }
-
-    /// Splits records into groups, by a fixed interval.
-    /// Returns `None` if the given interval is not divisible
-    /// by 1000, nor 1000 is divisible by it.
-    pub fn group(&self, interval: Milliseconds) -> Vec<GroupRecord> {
-        let (min, mut max) = self.time_bounds();
-        max = min + (max - min).div_ceil(interval) * interval;
-
-        let mut groups = Vec::new();
-
-        for start in (min..max).step_by(interval as usize) {
-            let records: Vec<Rc<Record>> = self
-                .non_dnf_records
-                .iter()
-                .filter(|r| {
-                    let t = r.time();
-                    t >= start && t < start + interval
-                })
-                .cloned()
-                .collect();
-
-            groups.push(GroupRecord::new(start, &records));
-        }
-
-        groups
-    }
-
-    /// Stats the whole session by the specified
-    /// `StatsType`, providing a trend over time.
-    pub fn trend(&self, s_type: &StatsType) -> Option<Vec<u32>> {
-        let s_scale = match s_type {
-            StatsType::Single => 1,
-            StatsType::Average(scale) | StatsType::Mean(scale) => *scale,
-        };
-
-        if self.records.len() < s_scale {
-            return None;
-        }
-
-        let mut result = Vec::new();
-        for (i, _) in self.records.iter().enumerate().skip(s_scale) {
-            result.push(self.stats(i, s_type).unwrap_or_default());
-        }
-
-        if result.is_empty() {
-            None
-        } else {
-            Some(result)
-        }
-    }
-}
-
-impl Session {
-    /// Returns the best, worst, mean and average
-    /// solve times of a session, which could
-    /// be "DNF", so they're returned in strings.
-    pub fn summary(&self) -> (String, String, String, String) {
-        let n = self.records.len();
-        let (best, worst) = self.best_and_worst();
-        let mean = self.mean();
-        let average = match self.stats(n - 1, &StatsType::Average(n)) {
-            Some(avg) => avg.to_readable_string(),
-            None => String::from("DNF"),
-        };
-
-        (
-            best.to_readable_string(),
-            worst.to_readable_string(),
-            mean.to_readable_string(),
-            average,
-        )
-    }
-
-    /// Returns the counts of
-    /// solve states in a session.
-    pub fn solve_states(&self) -> (usize, usize, usize) {
-        (
-            self.count_solve_state(&SolveState::is_ok),
-            self.count_solve_state(&SolveState::is_plus2),
-            self.count_solve_state(&SolveState::is_dnf),
-        )
-    }
-
-    /// Draws a png, visualizes grouping results.
-    pub fn draw_grouping(
-        &self,
-        canvas: &HtmlCanvasElement,
-        groups: &[GroupRecord],
-        interval: Milliseconds,
-        desc: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let count_max = groups.iter().map(|g| g.records().len()).max().unwrap_or(0);
-
-        if count_max == 0 {
-            return Err(Box::from("all groups are empty"));
-        }
-
-        let bounds = self.time_bounds();
-        let (secs_min, secs_max) = (bounds.0 / 1000, bounds.1 / 1000);
-
-        let root = CanvasBackend::with_canvas_object(canvas.clone())
-            .ok_or("Failed to acquire canvas backend")?
-            .into_drawing_area();
-        root.fill(&WHITE)?;
-
-        let caption = format!(
-            "[#{}] {} {} grouping (by {}s)",
-            self.rank,
-            self.name,
-            desc,
-            interval as f32 / 1000.0
-        );
-
-        let mut chart = ChartBuilder::on(&root)
-            .caption(caption, ("Consolas", 48).into_font())
-            .margin(20)
-            .x_label_area_size(160)
-            .y_label_area_size(160)
-            .build_cartesian_2d(
-                (secs_min.max(1) - 1) as f32..(secs_max + 1) as f32,
-                0u32..(count_max as f32 * 1.1) as u32,
-            )?;
-
-        chart
-            .configure_mesh()
-            .label_style(("Consolas", 32).into_font())
-            .axis_desc_style(("Consolas", 40).into_font())
-            .x_desc("Range / time")
-            .y_desc("Count")
-            .x_label_formatter(&Seconds::to_readable_string)
-            .draw()?;
-
-        let coords: Vec<(f32, u32)> = groups
-            .iter()
-            .map(|g| (g.interval() as f32, g.records().len() as u32))
-            .collect();
-
-        chart.draw_series(coords.iter().map(|(x, y)| {
-            let x0 = { *x } / 1000.0;
-            let x1 = x0 + interval as f32 / 1000.0;
-            let y0 = 0;
-            let y1 = *y;
-
-            Rectangle::new([(x0, y0), (x1, y1)], RGBColor(91, 169, 253).filled())
-        }))?;
-
-        root.present()?;
-
-        Ok(())
-    }
-
-    /// Draws a png, visualizes trending results.
-    pub fn draw_trending(
-        &self,
-        canvas: &HtmlCanvasElement,
-        data: &[u32],
-        desc: &str,
-    ) -> Result<bool, Box<dyn std::error::Error>> {
-        let n = data.len();
-        let non_zero_n = data.iter().filter(|x| **x > 0).count();
-        let max = data.iter().max().unwrap_or(&0);
-
-        let root = CanvasBackend::with_canvas_object(canvas.clone())
-            .ok_or("Failed to acquire canvas backend")?
-            .into_drawing_area();
-        root.fill(&WHITE)?;
-
-        let caption = format!(
-            "[#{}] {} {} trend ({} plots)",
-            self.rank, self.name, desc, non_zero_n
-        );
-
-        let mut chart = ChartBuilder::on(&root)
-            .caption(&caption, ("Consolas", 48).into_font())
-            .margin(20)
-            .x_label_area_size(160)
-            .y_label_area_size(160)
-            .build_cartesian_2d(0..n, 0.0..*max as f32 * 1.1 / 1000.0)?;
-
-        chart
-            .configure_mesh()
-            .label_style(("Consolas", 32).into_font())
-            .axis_desc_style(("Consolas", 40).into_font())
-            .x_desc("Stats Number")
-            .y_label_formatter(&Seconds::to_readable_string)
-            .draw()?;
-
-        let mut start = data.iter().position(|x| *x > 0).unwrap_or(n);
-        let mut has_inconsistency = false;
-        loop {
-            let end = data
-                .iter()
-                .skip(start + 1)
-                .position(|x| *x == 0)
-                .unwrap_or(n - start - 1)
-                + start
-                + 1;
-
-            chart.draw_series(LineSeries::new(
-                (start..end).map(|i| (i, data[i] as f32 / 1000.0)),
-                RGBColor(91, 169, 253).stroke_width(3),
-            ))?;
-
-            if end == n {
-                break;
-            }
-
-            start = data
-                .iter()
-                .skip(end + 1)
-                .position(|x| *x > 0)
-                .unwrap_or(n - end - 1)
-                + end
-                + 1;
-            has_inconsistency = true;
-        }
-
-        root.present()?;
-
-        Ok(has_inconsistency)
-    }
-
-    /// Filters the records with a comment.
-    pub fn commented_records(&self) -> Vec<(usize, Rc<Record>)> {
-        self.records
-            .iter()
-            .enumerate()
-            .filter(|(_, r)| !r.comment().is_empty())
-            .map(|(i, r)| (i + 1, Rc::clone(r)))
-            .collect()
-    }
-}
+/// A group of records, by a time interval.
+pub type GroupTime = (Milliseconds, usize);

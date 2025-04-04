@@ -25,15 +25,15 @@
 
 分析器会从输入框读取分析选项，以下是配置说明。
 
-- `Summary`：提供分组的概览，包括最好和最差的时间、平均值、均值，和 `+2` 及 `DNF` 的次数统计。
+- `summary`：提供分组的概览，包括最好和最差的时间、平均值、均值，和 `+2` 及 `DNF` 的次数统计。
 - `stats`：统计的指标，从以下选项中选择一个：
   - `single`：单次成绩
   - `mo{n}`：`n` 次平均成绩
   - `ao{n}`：`n` 次去头去尾平均成绩
-- `PBs(stats)`：指标 `stats` 的个人最佳成绩的历史记录。
-- `Group(stats, millis)`：将指标 `stats` 以 `millis` 毫秒为间隔进行分组，生成直方图。
-- `Trend(stats)`：跟踪指标 `stats` 的趋势，生成趋势图。
-- `Commented`：筛选有注释的记录（如果你在跳 O / 跳 P 时写注释，这可能有帮助）。
+- `pbs(stats)`：指标 `stats` 的个人最佳成绩的历史记录。
+- `group(stats, millis)`：将指标 `stats` 以 `millis` 毫秒为间隔进行分组，生成直方图。
+- `trend(stats)`：跟踪指标 `stats` 的趋势，生成趋势图。
+- `commented`：筛选有注释的记录（如果你在跳 O / 跳 P 时写注释，这可能有帮助）。
 
 下面是分析选项的实际示例。
 
@@ -41,21 +41,28 @@
 # 注释以 '#' 开头
 
 # 分组概览
-Summary
+summary
 
 # 个人最佳成绩历史
-PBs(single)
-PBs(mo5)
-PBs(ao50)
+pbs(single)
+pbs(mo5)
+pbs(ao50)
 
 # 直方图
-Group(single, 500)  # 500ms
-Group(single, 1000) # 1000ms
+group(single, 500)  # 500ms
+group(single, 1000) # 1000ms
 
 # 趋势图
-Trend(mo5)
-Trend(ao200)
+trend(mo5)
+trend(ao200)
 
 # 有注释的记录
-Commented
+commented
 ```
+
+### Todo
+
+- 功能：
+    - 国际化。
+    - 以半阻塞的方式展示报告（分析完新的分组即刷新）。
+- 文档：添加 `变更记录.md`。

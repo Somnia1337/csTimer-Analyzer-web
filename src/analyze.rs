@@ -101,7 +101,7 @@ fn append_records_detail<W: Write>(
     writeln!(writer, "[#{}] {}", records[0].0, records[0].1)?;
 
     if records.len() > 1 {
-        writeln!(writer, "<details>\n<summary>Expand</summary>\n")?;
+        writeln!(writer, "<details>\n<summary>... more records</summary>\n")?;
         for pair in records.iter().skip(1) {
             writeln!(writer, "[#{}] {}", pair.0, pair.1)?;
         }
@@ -199,16 +199,32 @@ fn append_section<W: Write>(
                 append_message(
                     writer,
                     "INFO",
-                    &format!("No PB histories of **{}**.", stats_type),
+                    &format!("No PB histories of {}.", stats_type),
                 )
             } else {
+                let (first_pb, last_pb) = (
+                    pbs[0].1.to_readable_string(),
+                    pbs[pbs.len() - 1].1.to_readable_string(),
+                );
                 let pbs_desc = pbs
                     .iter()
                     .map(|pair| pair.1.to_readable_string())
                     .collect::<Vec<_>>()
                     .join(" -> ");
 
-                writeln!(writer, "```\n{}\n```\n", pbs_desc)?;
+                writeln!(
+                    writer,
+                    r"<details>
+<summary><code>{} -> {}</code></summary>
+
+```
+{}
+```
+
+</details>
+",
+                    first_pb, last_pb, pbs_desc
+                )?;
 
                 if matches!(stats_type, StatsType::Single) {
                     append_records_detail(

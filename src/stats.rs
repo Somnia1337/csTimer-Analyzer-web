@@ -9,11 +9,17 @@ use web_sys::HtmlCanvasElement;
 use crate::options::StatsType;
 use crate::record::{Record, SolveState};
 use crate::session::{GroupTime, Session};
-use crate::time::{HumanReadable, Milliseconds, Seconds};
+use crate::time::{HumanReadable, Milliseconds, Seconds, ToSeconds};
+
+const CUT_OFF: f32 = 0.05;
+const MAGNIFICATION: f32 = 1.1;
+
+fn arithmetic_mean(sum: Milliseconds, count: usize) -> Milliseconds {
+    (sum as f32 / count as f32).round() as Milliseconds
+}
 
 impl Session {
-    /// Best and worst non-DNF solve times,
-    /// in milliseconds.
+    /// Best and worst solve times that are not DNF in milliseconds.
     fn best_and_worst(&self) -> (Milliseconds, Milliseconds) {
         self.records_not_dnf()
             .iter()
@@ -23,15 +29,14 @@ impl Session {
             })
     }
 
-    /// Mean of non-DNF solve times.
+    /// Mean of solve times that are not DNF.
     fn mean(&self) -> Milliseconds {
         let sum: Milliseconds = self.records_not_dnf().iter().map(|r| r.time()).sum();
 
-        (sum as f32 / self.records_not_dnf().len() as f32).round() as Milliseconds
+        arithmetic_mean(sum, self.record_not_dnf_count())
     }
 
-    /// Count of solves that has
-    /// the specified `SolveState`.
+    /// Count of `Record`s that has the specified `SolveState`.
     fn count_solve_state(&self, is_state: &dyn Fn(SolveState) -> bool) -> usize {
         self.records()
             .iter()
@@ -39,8 +44,7 @@ impl Session {
             .count()
     }
 
-    /// Stats a single solve, or the
-    /// mean or average of solves.
+    /// Stats a single solve, or the mean or average over a chunk of solves.
     fn stats(&self, pos: usize, s_type: &StatsType) -> Option<Milliseconds> {
         match s_type {
             StatsType::Single => {
@@ -59,17 +63,16 @@ impl Session {
                 if chunk.iter().any(|r| r.solve_state().is_dnf()) {
                     None
                 } else {
-                    Some(
-                        (chunk.iter().map(|r| r.time()).sum::<Milliseconds>() as f32
-                            / *s_scale as f32)
-                            .round() as Milliseconds,
-                    )
+                    Some(arithmetic_mean(
+                        chunk.iter().map(|r| r.time()).sum(),
+                        *s_scale,
+                    ))
                 }
             }
 
             StatsType::Average(s_scale) => {
                 let chunk = &self.records()[(pos + 1).saturating_sub(*s_scale)..=pos];
-                let cut_off = (*s_scale as f32 * 0.05).ceil() as usize;
+                let cut_off = (*s_scale as f32 * CUT_OFF).ceil() as usize;
                 let take = s_scale.saturating_sub(cut_off * 2);
 
                 if take == 0 || chunk.iter().filter(|r| r.solve_state().is_dnf()).count() > cut_off
@@ -88,18 +91,17 @@ impl Session {
                         .collect();
                     chunk.sort_unstable();
 
-                    Some(
-                        (chunk.iter().skip(cut_off).take(take).sum::<Milliseconds>() as f64
-                            / take as f64)
-                            .round() as Milliseconds,
-                    )
+                    Some(arithmetic_mean(
+                        chunk.iter().skip(cut_off).take(take).sum(),
+                        take,
+                    ))
                 }
             }
         }
     }
 
     fn stats_data(&self, s_type: &StatsType) -> Vec<Milliseconds> {
-        (0..self.records().len())
+        (0..self.record_count())
             .skip(s_type.scale() - 1)
             .filter_map(|i| self.stats(i, s_type))
             .collect()
@@ -116,28 +118,25 @@ impl Session {
             .len()
     }
 
-    /// Returns the best, worst, mean and average
-    /// solve times of a session, which could
-    /// be "DNF", so they're returned in strings.
-    pub fn summary(&self) -> (String, String, String, String) {
-        let n = self.records().len();
+    /// The best, worst, mean and average solve times of a `Session`,
+    /// where average could be `None` representing a DNF.
+    pub fn summary(
+        &self,
+    ) -> (
+        Milliseconds,
+        Milliseconds,
+        Milliseconds,
+        Option<Milliseconds>,
+    ) {
+        let record_count = self.record_count();
         let (best, worst) = self.best_and_worst();
         let mean = self.mean();
-        let average = match self.stats(n - 1, &StatsType::Average(n)) {
-            Some(avg) => avg.to_readable_string(),
-            None => String::from("DNF"),
-        };
+        let average = self.stats(record_count - 1, &StatsType::Average(record_count));
 
-        (
-            best.to_readable_string(),
-            worst.to_readable_string(),
-            mean.to_readable_string(),
-            average,
-        )
+        (best, worst, mean, average)
     }
 
-    /// Returns the counts of
-    /// solve states in a session.
+    /// The counts of solve states of a session.
     pub fn solve_states(&self) -> (usize, usize, usize) {
         (
             self.count_solve_state(&SolveState::is_ok),
@@ -146,8 +145,8 @@ impl Session {
         )
     }
 
-    /// Gets all the records that breaks the specified
-    /// kind of personal best, along with the new PB.
+    /// Every `Record` that breaked the personal best
+    /// of the specified type, along with the new PB.
     pub fn pbs(&self, s_type: &StatsType) -> Vec<(usize, Milliseconds, Rc<Record>)> {
         let s_scale = s_type.scale();
         let mut pb = u32::MAX;
@@ -165,9 +164,7 @@ impl Session {
         pbs
     }
 
-    /// Splits records into groups, by a fixed interval.
-    /// Returns `None` if the given interval is not divisible
-    /// by 1000, nor 1000 is divisible by it.
+    /// Splits times of the specified type into groups, by a fixed interval.
     pub fn group(&self, interval: Milliseconds, s_type: &StatsType) -> Vec<GroupTime> {
         let data = self.stats_data(s_type);
         let (mut min, mut max) = (
@@ -191,11 +188,10 @@ impl Session {
         groups
     }
 
-    /// Stats the whole session by the specified
-    /// `StatsType`, providing a trend over time.
+    /// A trend of time of the specified type over solves.
     pub fn trend(&self, s_type: &StatsType) -> Vec<u32> {
         let s_scale = s_type.scale();
-        let mut trends = vec![0; self.records().len()];
+        let mut trends = vec![0; self.record_count()];
 
         for (i, _) in self.records().iter().enumerate().skip(s_scale - 1) {
             trends[i] = self.stats(i, s_type).unwrap_or_default();
@@ -219,8 +215,8 @@ impl Session {
         }
 
         let (secs_min, secs_max) = (
-            groups[0].0 as f32 / 1000.0,
-            groups[groups.len() - 1].0 as f32 / 1000.0,
+            groups[0].0.as_seconds(),
+            groups[groups.len() - 1].0.as_seconds(),
         );
 
         let root = CanvasBackend::with_canvas_object(canvas.clone())
@@ -233,7 +229,7 @@ impl Session {
             self.rank(),
             self.name(),
             desc,
-            interval as f32 / 1000.0
+            interval.as_seconds(),
         );
 
         let mut chart = ChartBuilder::on(&root)
@@ -243,7 +239,7 @@ impl Session {
             .y_label_area_size(160)
             .build_cartesian_2d(
                 (secs_min.max(1.0) - 1.0)..(secs_max + 1.0),
-                0u32..(count_max as f32 * 1.1) as u32,
+                0u32..(count_max as f32 * MAGNIFICATION) as u32,
             )?;
 
         chart
@@ -257,12 +253,12 @@ impl Session {
 
         let coords: Vec<(f32, u32)> = groups
             .iter()
-            .map(|g| (g.0 as f32 / 1000.0, g.1 as u32))
+            .map(|g| (g.0.as_seconds(), g.1 as u32))
             .collect();
 
         chart.draw_series(coords.iter().map(|(x, y)| {
             let x0 = *x;
-            let x1 = x0 + interval as f32 / 1000.0;
+            let x1 = x0 + interval.as_seconds();
             let y0 = 0;
             let y1 = *y;
 
@@ -274,7 +270,7 @@ impl Session {
         Ok(())
     }
 
-    /// Draws a png, visualizes trending results.
+    /// Draws an image on canvas, visualizes trending results.
     pub fn draw_trending(
         &self,
         canvas: &HtmlCanvasElement,
@@ -324,7 +320,7 @@ impl Session {
             .margin(20)
             .x_label_area_size(160)
             .y_label_area_size(160)
-            .build_cartesian_2d(0..n, 0.0..max as f32 * 1.1 / 1000.0)?;
+            .build_cartesian_2d(0..n, 0.0..max.as_seconds() * MAGNIFICATION)?;
 
         chart
             .configure_mesh()
@@ -336,7 +332,7 @@ impl Session {
 
         for (start, end) in real_point_segments(times) {
             chart.draw_series(LineSeries::new(
-                (start..end).map(|i| (i, times[i] as f32 / 1000.0)),
+                (start..end).map(|i| (i, times[i].as_seconds())),
                 RGBColor(91, 169, 253).stroke_width(3),
             ))?;
         }
@@ -346,7 +342,7 @@ impl Session {
         Ok(())
     }
 
-    /// Filters out records with a comment.
+    /// Every `Record` that has a comment.
     pub fn commented_records(&self) -> Vec<(usize, Rc<Record>)> {
         self.records()
             .iter()

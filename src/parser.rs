@@ -11,7 +11,7 @@ fn local_offset_seconds() -> i64 {
     -Date::new_0().get_timezone_offset() as i64 * 60
 }
 
-/// Parses sessions and records within.
+/// Parses `Session`s and `Record`s within.
 pub fn parse_sessions(input: &str) -> Vec<Session> {
     let data: Value = match serde_json::from_str(input) {
         Ok(json) => json,
@@ -57,7 +57,7 @@ pub fn parse_sessions(input: &str) -> Vec<Session> {
     sessions
 }
 
-/// Parses records in a session.
+/// Parses `Record`s in a `Session`.
 pub fn parse_records(session: &Value, offset: i64) -> Vec<Record> {
     session
         .as_array()
@@ -103,7 +103,7 @@ pub fn parse_records(session: &Value, offset: i64) -> Vec<Record> {
         .collect()
 }
 
-/// Parses metadata for every session.
+/// Parses metadata for every `Session`.
 pub fn parse_session_metadata(json: &Value) -> Vec<(usize, String, usize, (i64, i64))> {
     let session_data = json.get("properties").and_then(|p| p.get("sessionData"));
     if session_data.is_none() {
@@ -154,8 +154,7 @@ pub fn parse_session_metadata(json: &Value) -> Vec<(usize, String, usize, (i64, 
     session_data
 }
 
-/// Ignores blank lines and removes
-/// comments from options file.
+/// Applies sanitization to the options string.
 fn sanitize_options(options: &str) -> Vec<String> {
     options
         .lines()
@@ -169,10 +168,8 @@ fn sanitize_options(options: &str) -> Vec<String> {
 
 /// Parses options and removes duplicates.
 pub fn parse_options(options: &str) -> Vec<AnalysisOption> {
-    // Sanitizes options
     let options = sanitize_options(options);
 
-    // Removes duplicates
     let mut seen = std::collections::HashSet::with_capacity(options.len());
     let options: Vec<AnalysisOption> = options
         .into_iter()

@@ -54,14 +54,24 @@ impl Session {
         )
     }
 
-    /// The records of a `Session`.
+    /// The `Record`s of a `Session`.
     pub fn records(&self) -> &[Rc<Record>] {
         &self.records
     }
 
-    /// The records of a `Session` that are not DNF.
+    /// The `Record`s of a `Session` that are not DNF.
     pub fn records_not_dnf(&self) -> &[Rc<Record>] {
         &self.records_not_dnf
+    }
+
+    /// The number of `Record`s.
+    pub fn record_count(&self) -> usize {
+        self.records.len()
+    }
+
+    /// The number of `Record`s that are not DNF.
+    pub fn record_not_dnf_count(&self) -> usize {
+        self.records_not_dnf.len()
     }
 }
 
@@ -72,10 +82,11 @@ impl fmt::Display for Session {
             "[#{}] **{}** (`{}` records)",
             self.rank(),
             self.name(),
-            self.records().len(),
+            self.record_count(),
         )
     }
 }
 
-/// A group of records, by a time interval.
+/// A group of `Record`s, with a starting time
+/// and a count of the `Record`s.
 pub type GroupTime = (Milliseconds, usize);

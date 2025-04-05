@@ -3,9 +3,9 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::num::ParseIntError;
 
-use crate::time::Milliseconds;
+use crate::time::{Milliseconds, ToSeconds};
 
-/// The scale(number) of statistics.
+/// The scale of statistics.
 type StatsScale = usize;
 
 /// The type of statistics.
@@ -26,9 +26,9 @@ pub enum StatsType {
 impl fmt::Display for StatsType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let label = match self {
-            StatsType::Single => String::from("Single"),
-            StatsType::Mean(scale) => format!("mo{}", scale),
-            StatsType::Average(scale) => format!("ao{}", scale),
+            Self::Single => String::from("single"),
+            Self::Mean(scale) => format!("mo{}", scale),
+            Self::Average(scale) => format!("ao{}", scale),
         };
 
         write!(f, "{}", label)
@@ -42,7 +42,7 @@ impl TryFrom<&str> for StatsType {
         let value = value.trim().to_lowercase();
 
         if value == "single" {
-            return Ok(StatsType::Single);
+            return Ok(Self::Single);
         }
 
         if let Some(inner) = value.strip_prefix("mo") {
@@ -50,8 +50,8 @@ impl TryFrom<&str> for StatsType {
 
             return match scale.cmp(&1) {
                 Ordering::Less => Err(ParseStatsTypeError::ScaleIsZero),
-                Ordering::Equal => Ok(StatsType::Single),
-                Ordering::Greater => Ok(StatsType::Mean(scale)),
+                Ordering::Equal => Ok(Self::Single),
+                Ordering::Greater => Ok(Self::Mean(scale)),
             };
         }
 
@@ -60,8 +60,8 @@ impl TryFrom<&str> for StatsType {
 
             return match scale.cmp(&1) {
                 Ordering::Less => Err(ParseStatsTypeError::ScaleIsZero),
-                Ordering::Equal => Ok(StatsType::Single),
-                Ordering::Greater => Ok(StatsType::Average(scale)),
+                Ordering::Equal => Ok(Self::Single),
+                Ordering::Greater => Ok(Self::Average(scale)),
             };
         }
 
@@ -73,8 +73,8 @@ impl StatsType {
     /// Returns the scale of the stats type.
     pub fn scale(&self) -> StatsScale {
         match self {
-            StatsType::Single => 1,
-            StatsType::Average(scale) | StatsType::Mean(scale) => *scale,
+            Self::Single => 1,
+            Self::Average(scale) | Self::Mean(scale) => *scale,
         }
     }
 }
@@ -94,7 +94,7 @@ pub enum ParseStatsTypeError {
 
 impl From<ParseIntError> for ParseStatsTypeError {
     fn from(err: ParseIntError) -> Self {
-        ParseStatsTypeError::InvalidScale(err)
+        Self::InvalidScale(err)
     }
 }
 
@@ -133,17 +133,13 @@ pub enum AnalysisOption {
 impl fmt::Display for AnalysisOption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let label = match self {
-            AnalysisOption::Summary => String::from("Summary"),
-            AnalysisOption::Pbs(stats_type) => format!("PBs(**{}**)", stats_type),
-            AnalysisOption::Group(stats_type, interval) => {
-                format!(
-                    "Group(**{}**, by {}s)",
-                    stats_type,
-                    *interval as f32 / 1000.0
-                )
+            Self::Summary => String::from("Summary"),
+            Self::Pbs(stats_type) => format!("PBs(**{}**)", stats_type),
+            Self::Group(stats_type, interval) => {
+                format!("Group(**{}**, by {}s)", stats_type, interval.as_seconds())
             }
-            AnalysisOption::Trend(stats_type) => format!("Trend(**{}**)", stats_type),
-            AnalysisOption::Commented => String::from("Commented"),
+            Self::Trend(stats_type) => format!("Trend(**{}**)", stats_type),
+            Self::Commented => String::from("Commented"),
         };
 
         write!(f, "{}", label)
@@ -155,13 +151,13 @@ impl TryFrom<&str> for AnalysisOption {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         if value == "summary" {
-            return Ok(AnalysisOption::Summary);
+            return Ok(Self::Summary);
         }
 
         if let Some(inner) = value.strip_prefix("pbs(") {
             if let Some(inner) = inner.strip_suffix(")") {
                 let stats = StatsType::try_from(inner)?;
-                return Ok(AnalysisOption::Pbs(stats));
+                return Ok(Self::Pbs(stats));
             }
         }
 
@@ -177,19 +173,19 @@ impl TryFrom<&str> for AnalysisOption {
                         ));
                     }
                 };
-                return Ok(AnalysisOption::Group(stats, interval));
+                return Ok(Self::Group(stats, interval));
             }
         }
 
         if let Some(inner) = value.strip_prefix("trend(") {
             if let Some(inner) = inner.strip_suffix(")") {
                 let stats = StatsType::try_from(inner)?;
-                return Ok(AnalysisOption::Trend(stats));
+                return Ok(Self::Trend(stats));
             }
         }
 
         if value == "commented" {
-            return Ok(AnalysisOption::Commented);
+            return Ok(Self::Commented);
         }
 
         Err(ParseAnalysisOptionError::InvalidFormat)
@@ -218,7 +214,7 @@ pub enum ParseAnalysisOptionError {
 
 impl From<ParseStatsTypeError> for ParseAnalysisOptionError {
     fn from(err: ParseStatsTypeError) -> Self {
-        ParseAnalysisOptionError::InvalidStats(err)
+        Self::InvalidStats(err)
     }
 }
 

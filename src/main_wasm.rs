@@ -9,12 +9,12 @@ use crate::analyze::analyze;
 use crate::parser::{parse_options, parse_sessions};
 
 /// The entrance function of WASM, analyzes
-/// the data provided with options.
+/// a csTimer data file with the specified options.
 #[wasm_bindgen]
 pub fn analyze_from_files(
     options_txt: &[u8],
     data_txt: &[u8],
-    canvas: HtmlCanvasElement,
+    canvas: &HtmlCanvasElement,
 ) -> Result<JsValue, JsValue> {
     console_error_panic_hook::set_once();
 
@@ -36,7 +36,7 @@ pub fn analyze_from_files(
 
     // Analyzes sessions
     let mut output = Vec::new();
-    analyze(&sessions, &options, &mut output, &canvas, parsing_time)
+    analyze(&sessions, &options, &mut output, canvas, parsing_time)
         .map_err(|e| JsValue::from_str(&format!("Failed to analyze sessions: {}", e)))?;
 
     // Return markdown result
@@ -46,8 +46,8 @@ pub fn analyze_from_files(
     Ok(JsValue::from_str(&analysis))
 }
 
-/// Converts the markdown content to HTML,
-/// a faster equivalent to marked.js.
+/// Converts the markdown content to HTML, a
+/// more time-efficient equivalent to marked.js.
 #[wasm_bindgen]
 pub fn render_markdown(input: &str) -> JsValue {
     let mut options = Options::empty();

@@ -9,22 +9,31 @@ use crate::record::Record;
 use crate::session::Session;
 use crate::time::HumanReadable;
 
+/// Calculates a percentage.
+fn percentage(count: usize, total: usize) -> f32 {
+    if total > 0 {
+        (count as f32 * 100.0) / total as f32
+    } else {
+        0.0
+    }
+}
+
 /// Returns the letter 's' for a plural form
 /// in en-us, or nothing for a single form.
 fn plural_form(count: usize) -> String {
-    if count == 1 {
+    if count <= 1 {
         String::new()
     } else {
         String::from("s")
     }
 }
 
-/// Appends a markdown heading with specified level.
+/// Appends a markdown heading with the specified level.
 fn append_heading<W: Write>(writer: &mut W, title: &str, level: usize) -> io::Result<()> {
     writeln!(writer, "{} {}\n", "#".repeat(level), title)
 }
 
-/// Appends information of the dataset and parsed options.
+/// Appends information about the dataset and parsed options.
 fn append_analysis_info<W: Write>(
     writer: &mut W,
     sessions: &[Session],
@@ -38,7 +47,10 @@ fn append_analysis_info<W: Write>(
     }
 
     let session_count = sessions.len();
-    let record_count = sessions.iter().map(|s| s.records().len()).sum::<usize>();
+    let record_count = sessions
+        .iter()
+        .map(super::session::Session::record_count)
+        .sum::<usize>();
 
     writeln!(
         writer,
@@ -77,23 +89,28 @@ fn append_analysis_info<W: Write>(
     Ok(false)
 }
 
-/// Appends the start and end `date_times` of a session.
+/// Appends information about days practiced on a session.
 fn append_session_date_time<W: Write>(writer: &mut W, session: &Session) -> io::Result<()> {
     let (start, end) = session.date_time();
+    let (start, end) = (start.date_naive(), end.date_naive());
     let days = session.days_with_record();
+    let total_days = end.signed_duration_since(start).num_days() + 1;
 
     writeln!(
         writer,
-        "- {} ~ {}\n- {} day{} practiced\n",
-        start.to_string().strip_suffix(" UTC").unwrap_or_default(),
-        end.to_string().strip_suffix(" UTC").unwrap_or_default(),
+        "- {} ~ {} ({} days)\n- {} day{} actually practiced (`{:.1}%` out of {} days)\n",
+        start,
+        end,
+        total_days,
         days,
-        plural_form(days)
+        plural_form(days),
+        percentage(days, total_days as usize),
+        total_days,
     )
 }
 
 /// Appends the details of some `Record`s, a HTML collapsible
-/// element is added when there are more than one `Record`.
+/// element will be added when there are more than one `Record`.
 fn append_records_detail<W: Write>(
     writer: &mut W,
     records: &[(usize, Rc<Record>)],
@@ -118,28 +135,31 @@ fn append_summary_table<W: Write>(writer: &mut W, session: &Session) -> io::Resu
         r"| best | worst | mean | average |
 | :-: | :-: | :-: | :-: |
 | `{}` | `{}` | `{}` | `{}` |",
-        best, worst, mean, average,
+        best.to_readable_string(),
+        worst.to_readable_string(),
+        mean.to_readable_string(),
+        average.map_or(String::from("DNF"), |avg| avg.to_readable_string())
     );
 
     let (ok, plus2, dnf) = session.solve_states();
-    let record_count = session.records().len() as f64;
+    let record_count = session.record_count();
     let solve_states = format!(
-        r"| Ok | +2 | DNF |
+        r"| OK | +2 | DNF |
 | :-: | :-: | :-: |
 | `{}` | `{}` `({:.2}%)` | `{}` `({:.2}%)` |",
         ok,
         plus2,
-        (plus2 * 100) as f64 / record_count,
+        percentage(plus2, record_count),
         dnf,
-        (dnf * 100) as f64 / record_count
+        percentage(dnf, record_count),
     );
 
     writeln!(writer, "{}\n\n{}\n", summary, solve_states)
 }
 
-/// Appends a quote.
-fn append_message<W: Write>(writer: &mut W, callout_type: &str, content: &str) -> io::Result<()> {
-    writeln!(writer, "> **{}**: {}\n", callout_type, content)
+/// Appends a quote with a label and a message.
+fn append_message<W: Write>(writer: &mut W, label: &str, content: &str) -> io::Result<()> {
+    writeln!(writer, "> **{}**: {}\n", label, content)
 }
 
 /// Appends an image data url.
@@ -151,7 +171,7 @@ fn append_image_data_url<W: Write>(writer: &mut W, canvas: &HtmlCanvasElement) -
     )
 }
 
-/// Appends debug information of analysis timings.
+/// Appends debug information about analysis timings.
 fn append_timings<W: Write>(
     writer: &mut W,
     parsing_time: Duration,
@@ -180,7 +200,7 @@ fn append_section<W: Write>(
 
     if let Some(s_type) = op.stats_type() {
         let s_scale = s_type.scale();
-        if session.records().len() < s_scale {
+        if session.record_count() < s_scale {
             return append_message(
                 writer,
                 "INFO",

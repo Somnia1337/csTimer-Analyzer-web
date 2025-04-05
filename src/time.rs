@@ -13,8 +13,7 @@ const MIN: Milliseconds = 60_000;
 /// Milliseconds in an hour.
 const HOUR: Milliseconds = 3_600_000;
 
-/// Formats a time type into a
-/// human-readable string.
+/// Formats a time type into a human-readable string.
 pub trait HumanReadable {
     /// The human-readable string of the type.
     fn to_readable_string(&self) -> String;
@@ -49,8 +48,18 @@ impl HumanReadable for Milliseconds {
 
 impl HumanReadable for Seconds {
     fn to_readable_string(&self) -> String {
-        let millis = (*self * 1000.0) as Milliseconds;
+        let millis = (*self * SEC as f32) as Milliseconds;
 
         millis.to_readable_string()
+    }
+}
+
+pub trait ToSeconds {
+    fn as_seconds(&self) -> Seconds;
+}
+
+impl ToSeconds for Milliseconds {
+    fn as_seconds(&self) -> Seconds {
+        *self as f32 / SEC as f32
     }
 }

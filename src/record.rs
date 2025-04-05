@@ -4,8 +4,7 @@ use chrono::DateTime;
 
 use crate::time::{HumanReadable, Milliseconds};
 
-/// Valid states of a solve,
-/// same as the "state" in csTimer.
+/// Valid states of a solve, same as the "state" in csTimer.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum SolveState {
     /// No penalty.
@@ -21,9 +20,9 @@ pub enum SolveState {
 impl fmt::Display for SolveState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let literal = match self {
-            SolveState::Ok => "Ok",
-            SolveState::Plus2 => "+2",
-            SolveState::Dnf => "DNF",
+            Self::Ok => "Ok",
+            Self::Plus2 => "+2",
+            Self::Dnf => "DNF",
         };
 
         write!(f, "{}", literal)
@@ -33,17 +32,17 @@ impl fmt::Display for SolveState {
 impl SolveState {
     /// Returns true if state is Ok.
     pub fn is_ok(self) -> bool {
-        matches!(self, SolveState::Ok)
+        matches!(self, Self::Ok)
     }
 
     /// Returns true if state is Plus2.
     pub fn is_plus2(self) -> bool {
-        matches!(self, SolveState::Plus2)
+        matches!(self, Self::Plus2)
     }
 
     /// Returns true if state is Dnf.
     pub fn is_dnf(self) -> bool {
-        matches!(self, SolveState::Dnf)
+        matches!(self, Self::Dnf)
     }
 }
 

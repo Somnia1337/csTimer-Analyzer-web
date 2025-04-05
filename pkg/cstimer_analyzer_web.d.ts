@@ -2,12 +2,12 @@
 /* eslint-disable */
 /**
  * The entrance function of WASM, analyzes
- * the data provided with options.
+ * a csTimer data file with the specified options.
  */
 export function analyze_from_files(options_txt: Uint8Array, data_txt: Uint8Array, canvas: HTMLCanvasElement): any;
 /**
- * Converts the markdown content to HTML,
- * a faster equivalent to marked.js.
+ * Converts the markdown content to HTML, a
+ * more time-efficient equivalent to marked.js.
  */
 export function render_markdown(input: string): any;
 

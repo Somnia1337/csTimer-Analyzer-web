@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::num::ParseIntError;
 
-use crate::time::{Milliseconds, ToSeconds};
+use crate::time::{AsSeconds, Milliseconds};
 
 /// The scale of statistics.
 type StatsScale = usize;
@@ -71,7 +71,7 @@ impl TryFrom<&str> for StatsType {
 
 impl StatsType {
     /// Returns the scale of the stats type.
-    pub fn scale(&self) -> StatsScale {
+    pub const fn scale(&self) -> StatsScale {
         match self {
             Self::Single => 1,
             Self::Average(scale) | Self::Mean(scale) => *scale,
@@ -194,7 +194,7 @@ impl TryFrom<&str> for AnalysisOption {
 
 impl AnalysisOption {
     /// Returns the stats type of the analysis option.
-    pub fn stats_type(&self) -> Option<&StatsType> {
+    pub const fn stats_type(&self) -> Option<&StatsType> {
         match self {
             Self::Pbs(s_type) | Self::Group(s_type, _) | Self::Trend(s_type) => Some(s_type),
             _ => None,

@@ -138,7 +138,7 @@ fn append_summary_table<W: Write>(writer: &mut W, session: &Session) -> io::Resu
         best.to_readable_string(),
         worst.to_readable_string(),
         mean.to_readable_string(),
-        average.map_or(String::from("DNF"), |avg| avg.to_readable_string())
+        average.map_or_else(|| String::from("DNF"), |avg| avg.to_readable_string())
     );
 
     let (ok, plus2, dnf) = session.solve_states();

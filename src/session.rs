@@ -41,7 +41,7 @@ impl Session {
     }
 
     /// The rank of a `Session`.
-    pub fn rank(&self) -> usize {
+    pub const fn rank(&self) -> usize {
         self.rank
     }
 

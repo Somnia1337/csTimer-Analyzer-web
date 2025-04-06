@@ -5,7 +5,7 @@ use chrono::DateTime;
 use crate::time::{HumanReadable, Milliseconds};
 
 /// Valid states of a solve, same as the "state" in csTimer.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum SolveState {
     /// No penalty.
     Ok,
@@ -31,23 +31,23 @@ impl fmt::Display for SolveState {
 
 impl SolveState {
     /// Returns true if state is Ok.
-    pub fn is_ok(self) -> bool {
+    pub const fn is_ok(self) -> bool {
         matches!(self, Self::Ok)
     }
 
     /// Returns true if state is Plus2.
-    pub fn is_plus2(self) -> bool {
+    pub const fn is_plus2(self) -> bool {
         matches!(self, Self::Plus2)
     }
 
     /// Returns true if state is Dnf.
-    pub fn is_dnf(self) -> bool {
+    pub const fn is_dnf(self) -> bool {
         matches!(self, Self::Dnf)
     }
 }
 
 /// A cubing record.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Record {
     solve_state: SolveState,
     time: Milliseconds,
@@ -58,7 +58,7 @@ pub struct Record {
 
 impl Record {
     /// Creates a new `Record` from its fields.
-    pub fn from(
+    pub const fn from(
         solve_state: SolveState,
         time: Milliseconds,
         scramble: String,
@@ -75,12 +75,12 @@ impl Record {
     }
 
     /// The solve state of a `Record`.
-    pub fn solve_state(&self) -> SolveState {
+    pub const fn solve_state(&self) -> SolveState {
         self.solve_state
     }
 
     /// The time of a `Record`.
-    pub fn time(&self) -> Milliseconds {
+    pub const fn time(&self) -> Milliseconds {
         self.time
     }
 

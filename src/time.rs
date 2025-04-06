@@ -48,17 +48,19 @@ impl HumanReadable for Milliseconds {
 
 impl HumanReadable for Seconds {
     fn to_readable_string(&self) -> String {
-        let millis = (*self * SEC as f32) as Milliseconds;
+        let millis = (*self * SEC as Self) as Milliseconds;
 
         millis.to_readable_string()
     }
 }
 
-pub trait ToSeconds {
+/// Represents a `Milliseconds` value as `Seconds`.
+pub trait AsSeconds {
+    /// The `Seconds` value of a `Milliseconds`.
     fn as_seconds(&self) -> Seconds;
 }
 
-impl ToSeconds for Milliseconds {
+impl AsSeconds for Milliseconds {
     fn as_seconds(&self) -> Seconds {
         *self as f32 / SEC as f32
     }

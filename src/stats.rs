@@ -9,11 +9,12 @@ use web_sys::HtmlCanvasElement;
 use crate::options::StatsType;
 use crate::record::{Record, SolveState};
 use crate::session::{GroupTime, Session};
-use crate::time::{HumanReadable, Milliseconds, Seconds, ToSeconds};
+use crate::time::{HumanReadable, Milliseconds, Seconds, AsSeconds};
 
 const CUT_OFF: f32 = 0.05;
 const MAGNIFICATION: f32 = 1.1;
 
+/// The plain arithmetic mean.
 fn arithmetic_mean(sum: Milliseconds, count: usize) -> Milliseconds {
     (sum as f32 / count as f32).round() as Milliseconds
 }
@@ -100,6 +101,7 @@ impl Session {
         }
     }
 
+    /// All non-DNF data of the specified type of a `Session`.
     fn stats_data(&self, s_type: &StatsType) -> Vec<Milliseconds> {
         (0..self.record_count())
             .skip(s_type.scale() - 1)

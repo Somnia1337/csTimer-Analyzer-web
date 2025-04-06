@@ -58,7 +58,7 @@ pub fn parse_sessions(input: &str) -> Vec<Session> {
 }
 
 /// Parses `Record`s in a `Session`.
-pub fn parse_records(session: &Value, offset: i64) -> Vec<Record> {
+fn parse_records(session: &Value, offset: i64) -> Vec<Record> {
     session
         .as_array()
         .iter()
@@ -104,7 +104,7 @@ pub fn parse_records(session: &Value, offset: i64) -> Vec<Record> {
 }
 
 /// Parses metadata for every `Session`.
-pub fn parse_session_metadata(json: &Value) -> Vec<(usize, String, usize, (i64, i64))> {
+fn parse_session_metadata(json: &Value) -> Vec<(usize, String, usize, (i64, i64))> {
     let session_data = json.get("properties").and_then(|p| p.get("sessionData"));
     if session_data.is_none() {
         return Vec::new();

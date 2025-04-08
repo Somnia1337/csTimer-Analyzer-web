@@ -1,5 +1,5 @@
 import init, {
-  analyze_from_files,
+  wasm_analyze,
   render_markdown,
 } from "../pkg/cstimer_analyzer_web.js";
 
@@ -46,7 +46,7 @@ async function run() {
     const data2 = await file2.arrayBuffer();
 
     try {
-      const result = analyze_from_files(
+      const result = wasm_analyze(
         new Uint8Array(data1),
         new Uint8Array(data2),
         canvas

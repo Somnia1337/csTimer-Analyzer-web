@@ -14,7 +14,7 @@ fn percentage(count: usize, total: usize) -> f32 {
     if total > 0 {
         (count as f32 * 100.0) / total as f32
     } else {
-        0.0
+        f32::NAN
     }
 }
 
@@ -29,7 +29,7 @@ fn plural_form(count: usize) -> String {
 }
 
 /// Appends a markdown heading with the specified level.
-fn append_heading<W: Write>(writer: &mut W, title: &str, level: usize) -> io::Result<()> {
+fn append_heading<W: Write>(writer: &mut W, level: usize, title: &str) -> io::Result<()> {
     writeln!(writer, "{} {}\n", "#".repeat(level), title)
 }
 
@@ -39,7 +39,7 @@ fn append_analysis_info<W: Write>(
     sessions: &[Session],
     options: &[AnalysisOption],
 ) -> io::Result<bool> {
-    append_heading(writer, "Dataset", 3)?;
+    append_heading(writer, 3, "Dataset")?;
 
     if sessions.is_empty() {
         writeln!(writer, "No session parsed successfully.\n")?;
@@ -62,11 +62,11 @@ fn append_analysis_info<W: Write>(
     )?;
 
     for session in sessions {
-        writeln!(writer, "- [{}](#session-{})", session, session.rank(),)?;
+        writeln!(writer, "- [{}](#session{})", session, session.rank(),)?;
     }
     writeln!(writer)?;
 
-    append_heading(writer, "Analysis Options", 3)?;
+    append_heading(writer, 3, "Analysis Options")?;
 
     if options.is_empty() {
         writeln!(writer, "No option parsed successfully.\n",)?;
@@ -178,7 +178,7 @@ fn append_timings<W: Write>(
     timings: &[(usize, Duration)],
     overall_time: Duration,
 ) -> io::Result<()> {
-    append_heading(writer, "Timings", 3)?;
+    append_heading(writer, 3, "Timings")?;
 
     writeln!(writer, "- Data parsing: {:.1?}", parsing_time)?;
     writeln!(writer, "- Analyzing: {:.1?}", overall_time)?;
@@ -196,7 +196,7 @@ fn append_section<W: Write>(
     op: &AnalysisOption,
     canvas: &HtmlCanvasElement,
 ) -> io::Result<()> {
-    append_heading(writer, &format!("{}", op), 4)?;
+    append_heading(writer, 4, &format!("{}", op))?;
 
     if let Some(s_type) = op.stats_type() {
         let s_scale = s_type.scale();
@@ -253,7 +253,16 @@ fn append_section<W: Write>(
                     )?;
                 }
 
-                Ok(())
+                let mut plots: Vec<(usize, u32)> = pbs.iter().map(|pb| (pb.0, pb.1)).collect();
+                plots.push((session.record_count(), pbs[pbs.len() - 1].1));
+                match session.draw_trending(canvas, &plots, &format!("{} PBs", stats_type)) {
+                    Ok(()) => append_image_data_url(writer, canvas),
+                    Err(e) => append_message(
+                        writer,
+                        "ERROR",
+                        &format!("Generating trending chart failed: {}.", e),
+                    ),
+                }
             }
         }
 
@@ -271,9 +280,9 @@ fn append_section<W: Write>(
         }
 
         AnalysisOption::Trend(stats_type) => {
-            let data = session.trend(stats_type);
+            let plots = session.trend(stats_type);
 
-            match session.draw_trending(canvas, &data, &stats_type.to_string()) {
+            match session.draw_trending(canvas, &plots, &stats_type.to_string()) {
                 Ok(()) => {
                     append_image_data_url(writer, canvas)?;
                     append_message(writer, "TIPS", "DNF & N/A are treated as empty points.")
@@ -313,16 +322,13 @@ pub fn analyze<W: Write>(
         return Ok(());
     }
 
-    let mut timings = Vec::with_capacity(sessions.len());
+    let mut session_times = Vec::with_capacity(sessions.len());
 
     for session in sessions {
         let session_timer = Instant::now();
 
-        append_heading(
-            writer,
-            &format!("<a id=\"session-{}\">{}</a>", session.rank(), session),
-            3,
-        )?;
+        let session_heading = format!("<a id=\"session{}\">{}</a>", session.rank(), session);
+        append_heading(writer, 3, &session_heading)?;
         append_session_date_time(writer, session)?;
 
         if session.records_not_dnf().is_empty() {
@@ -333,10 +339,15 @@ pub fn analyze<W: Write>(
             }
         }
 
-        timings.push((session.rank(), session_timer.elapsed()));
+        session_times.push((session.rank(), session_timer.elapsed()));
     }
 
-    append_timings(writer, parsing_time, &timings, analysis_timer.elapsed())?;
+    append_timings(
+        writer,
+        parsing_time,
+        &session_times,
+        analysis_timer.elapsed(),
+    )?;
 
     Ok(())
 }

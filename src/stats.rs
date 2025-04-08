@@ -9,18 +9,27 @@ use web_sys::HtmlCanvasElement;
 use crate::options::StatsType;
 use crate::record::{Record, SolveState};
 use crate::session::{GroupTime, Session};
-use crate::time::{HumanReadable, Milliseconds, Seconds, AsSeconds};
+use crate::time::{AsSeconds, HumanReadable, Milliseconds, Seconds};
 
 const CUT_OFF: f32 = 0.05;
 const MAGNIFICATION: f32 = 1.1;
+const MONOSPACE: &str = "JetBrains Mono, Consolas, Courier New";
+const CAPTION_FONT_SIZE: i32 = 48;
+const AXIS_DESC_FONT_SIZE: i32 = 40;
+const LABEL_FONT_SIZE: i32 = 32;
+const MARGIN: i32 = 20;
+const LABEL_AREA_SIZE: i32 = 160;
+const PLOT_COLOR: RGBColor = RGBColor(91, 169, 253);
+const STROKE_WIDTH: u32 = 3;
 
-/// The plain arithmetic mean.
-fn arithmetic_mean(sum: Milliseconds, count: usize) -> Milliseconds {
+/// The plain arithmetic mean over a sum of
+/// Milliseconds, rounds at 1 millis.
+fn round_mean(sum: Milliseconds, count: usize) -> Milliseconds {
     (sum as f32 / count as f32).round() as Milliseconds
 }
 
 impl Session {
-    /// Best and worst solve times that are not DNF in milliseconds.
+    /// Best and worst solve times that are not DNF.
     fn best_and_worst(&self) -> (Milliseconds, Milliseconds) {
         self.records_not_dnf()
             .iter()
@@ -34,10 +43,10 @@ impl Session {
     fn mean(&self) -> Milliseconds {
         let sum: Milliseconds = self.records_not_dnf().iter().map(|r| r.time()).sum();
 
-        arithmetic_mean(sum, self.record_not_dnf_count())
+        round_mean(sum, self.record_not_dnf_count())
     }
 
-    /// Count of `Record`s that has the specified `SolveState`.
+    /// Count of `Record`s with the specified `SolveState`.
     fn count_solve_state(&self, is_state: &dyn Fn(SolveState) -> bool) -> usize {
         self.records()
             .iter()
@@ -45,7 +54,7 @@ impl Session {
             .count()
     }
 
-    /// Stats a single solve, or the mean or average over a chunk of solves.
+    /// Stats a single solve, or the mean or average over some solves.
     fn stats(&self, pos: usize, s_type: &StatsType) -> Option<Milliseconds> {
         match s_type {
             StatsType::Single => {
@@ -64,10 +73,7 @@ impl Session {
                 if chunk.iter().any(|r| r.solve_state().is_dnf()) {
                     None
                 } else {
-                    Some(arithmetic_mean(
-                        chunk.iter().map(|r| r.time()).sum(),
-                        *s_scale,
-                    ))
+                    Some(round_mean(chunk.iter().map(|r| r.time()).sum(), *s_scale))
                 }
             }
 
@@ -92,7 +98,7 @@ impl Session {
                         .collect();
                     chunk.sort_unstable();
 
-                    Some(arithmetic_mean(
+                    Some(round_mean(
                         chunk.iter().skip(cut_off).take(take).sum(),
                         take,
                     ))
@@ -101,7 +107,7 @@ impl Session {
         }
     }
 
-    /// All non-DNF data of the specified type of a `Session`.
+    /// All non-DNF data of the specified `StatsType` over the `Session`.
     fn stats_data(&self, s_type: &StatsType) -> Vec<Milliseconds> {
         (0..self.record_count())
             .skip(s_type.scale() - 1)
@@ -111,7 +117,7 @@ impl Session {
 }
 
 impl Session {
-    /// Counts days that has at least a record in the session.
+    /// Count of days that has at least a `Record` in the `Session`.
     pub fn days_with_record(&self) -> usize {
         self.records()
             .iter()
@@ -120,8 +126,8 @@ impl Session {
             .len()
     }
 
-    /// The best, worst, mean and average solve times of a `Session`,
-    /// where average could be `None` representing a DNF.
+    /// The best, worst, mean and average solve times of the `Session`,
+    /// where average could be DNF represented by `None`.
     pub fn summary(
         &self,
     ) -> (
@@ -138,7 +144,7 @@ impl Session {
         (best, worst, mean, average)
     }
 
-    /// The counts of solve states of a session.
+    /// The counts of solve states of the `Session`.
     pub fn solve_states(&self) -> (usize, usize, usize) {
         (
             self.count_solve_state(&SolveState::is_ok),
@@ -148,7 +154,7 @@ impl Session {
     }
 
     /// Every `Record` that breaked the personal best
-    /// of the specified type, along with the new PB.
+    /// of the specified `StatsType`, with the new PB.
     pub fn pbs(&self, s_type: &StatsType) -> Vec<(usize, Milliseconds, Rc<Record>)> {
         let s_scale = s_type.scale();
         let mut pb = u32::MAX;
@@ -166,7 +172,8 @@ impl Session {
         pbs
     }
 
-    /// Splits times of the specified type into groups, by a fixed interval.
+    /// Splits times of the specified `StatsType`
+    /// into groups, by a fixed interval.
     pub fn group(&self, interval: Milliseconds, s_type: &StatsType) -> Vec<GroupTime> {
         let data = self.stats_data(s_type);
         let (mut min, mut max) = (
@@ -174,7 +181,7 @@ impl Session {
             data.iter().max().copied().unwrap_or_default(),
         );
         min = min / interval * interval;
-        max = min + (max - min).div_ceil(interval) * interval;
+        max = max.div_ceil(interval) * interval;
 
         let mut groups = Vec::with_capacity(((max - min) / interval + 1) as usize);
 
@@ -191,12 +198,12 @@ impl Session {
     }
 
     /// A trend of time of the specified type over solves.
-    pub fn trend(&self, s_type: &StatsType) -> Vec<u32> {
+    pub fn trend(&self, s_type: &StatsType) -> Vec<(usize, u32)> {
         let s_scale = s_type.scale();
-        let mut trends = vec![0; self.record_count()];
+        let mut trends: Vec<(usize, u32)> = (0..self.record_count()).map(|i| (i + 1, 0)).collect();
 
         for (i, _) in self.records().iter().enumerate().skip(s_scale - 1) {
-            trends[i] = self.stats(i, s_type).unwrap_or_default();
+            trends[i].1 = self.stats(i, s_type).unwrap_or_default();
         }
 
         trends
@@ -211,10 +218,6 @@ impl Session {
         desc: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let count_max = groups.iter().map(|g| g.1).max().unwrap_or_default();
-
-        if count_max == 0 {
-            return Err(Box::from("all groups are empty"));
-        }
 
         let (secs_min, secs_max) = (
             groups[0].0.as_seconds(),
@@ -234,20 +237,19 @@ impl Session {
             interval.as_seconds(),
         );
 
+        let x_spec = (secs_min.max(1.0) - 1.0)..(secs_max + 1.0);
+        let y_spec = 0u32..(count_max as f32 * MAGNIFICATION) as u32;
         let mut chart = ChartBuilder::on(&root)
-            .caption(caption, ("Consolas", 48).into_font())
-            .margin(20)
-            .x_label_area_size(160)
-            .y_label_area_size(160)
-            .build_cartesian_2d(
-                (secs_min.max(1.0) - 1.0)..(secs_max + 1.0),
-                0u32..(count_max as f32 * MAGNIFICATION) as u32,
-            )?;
+            .caption(caption, (MONOSPACE, CAPTION_FONT_SIZE).into_font())
+            .margin(MARGIN)
+            .x_label_area_size(LABEL_AREA_SIZE)
+            .y_label_area_size(LABEL_AREA_SIZE)
+            .build_cartesian_2d(x_spec, y_spec)?;
 
         chart
             .configure_mesh()
-            .label_style(("Consolas", 32).into_font())
-            .axis_desc_style(("Consolas", 40).into_font())
+            .label_style((MONOSPACE, LABEL_FONT_SIZE).into_font())
+            .axis_desc_style((MONOSPACE, AXIS_DESC_FONT_SIZE).into_font())
             .x_desc("Range / time")
             .y_desc("Count")
             .x_label_formatter(&Seconds::to_readable_string)
@@ -264,7 +266,7 @@ impl Session {
             let y0 = 0;
             let y1 = *y;
 
-            Rectangle::new([(x0, y0), (x1, y1)], RGBColor(91, 169, 253).filled())
+            Rectangle::new([(x0, y0), (x1, y1)], PLOT_COLOR.filled())
         }))?;
 
         root.present()?;
@@ -276,15 +278,15 @@ impl Session {
     pub fn draw_trending(
         &self,
         canvas: &HtmlCanvasElement,
-        times: &[u32],
+        plots: &[(usize, u32)],
         desc: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let real_point_segments = |times: &[u32]| -> Vec<(usize, usize)> {
+        let real_point_segments = |times: &[(usize, u32)]| -> Vec<(usize, usize)> {
             let mut segments = Vec::new();
             let mut start = None;
 
             for (i, t) in times.iter().enumerate() {
-                if *t > 0 {
+                if t.1 > 0 {
                     if start.is_none() {
                         start = Some(i);
                     }
@@ -300,42 +302,37 @@ impl Session {
             segments
         };
 
-        let n = times.len();
-        let real_point_count = times.iter().filter(|x| **x > 0).count();
-        let max = times.iter().max().copied().unwrap_or_default();
+        let n = self.record_count() + 2;
+        let max = plots.iter().map(|data| data.1).max().unwrap_or_default();
 
         let root = CanvasBackend::with_canvas_object(canvas.clone())
             .ok_or("Failed to acquire canvas backend")?
             .into_drawing_area();
         root.fill(&WHITE)?;
 
-        let caption = format!(
-            "[#{}] {} {} TRENDS ({} plots)",
-            self.rank(),
-            self.name(),
-            desc,
-            real_point_count
-        );
+        let caption = format!("[#{}] {} {} TRENDS", self.rank(), self.name(), desc,);
 
+        let x_spec = 1..n;
+        let y_spec = 0.0..max.as_seconds() * MAGNIFICATION;
         let mut chart = ChartBuilder::on(&root)
-            .caption(&caption, ("Consolas", 48).into_font())
-            .margin(20)
-            .x_label_area_size(160)
-            .y_label_area_size(160)
-            .build_cartesian_2d(0..n, 0.0..max.as_seconds() * MAGNIFICATION)?;
+            .caption(&caption, (MONOSPACE, CAPTION_FONT_SIZE).into_font())
+            .margin(MARGIN)
+            .x_label_area_size(LABEL_AREA_SIZE)
+            .y_label_area_size(LABEL_AREA_SIZE)
+            .build_cartesian_2d(x_spec, y_spec)?;
 
         chart
             .configure_mesh()
-            .label_style(("Consolas", 32).into_font())
-            .axis_desc_style(("Consolas", 40).into_font())
+            .label_style((MONOSPACE, LABEL_FONT_SIZE).into_font())
+            .axis_desc_style((MONOSPACE, AXIS_DESC_FONT_SIZE).into_font())
             .x_desc("Solves")
             .y_label_formatter(&Seconds::to_readable_string)
             .draw()?;
 
-        for (start, end) in real_point_segments(times) {
+        for (start, end) in real_point_segments(plots) {
             chart.draw_series(LineSeries::new(
-                (start..end).map(|i| (i, times[i].as_seconds())),
-                RGBColor(91, 169, 253).stroke_width(3),
+                (start..end).map(|i| (plots[i].0, plots[i].1.as_seconds())),
+                PLOT_COLOR.stroke_width(STROKE_WIDTH),
             ))?;
         }
 
@@ -344,7 +341,7 @@ impl Session {
         Ok(())
     }
 
-    /// Every `Record` that has a comment.
+    /// `Record`s with a comment.
     pub fn commented_records(&self) -> Vec<(usize, Rc<Record>)> {
         self.records()
             .iter()

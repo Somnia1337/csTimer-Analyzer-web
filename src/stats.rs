@@ -12,7 +12,7 @@ use crate::session::{GroupTime, Session};
 use crate::time::{AsSeconds, HumanReadable, Milliseconds, Seconds};
 
 const CUT_OFF: f32 = 0.05;
-const MAGNIFICATION: f32 = 1.1;
+const MAGNIFICATION: f32 = 1.05;
 const MONOSPACE: &str = "JetBrains Mono, Consolas, Courier New";
 const CAPTION_FONT_SIZE: i32 = 48;
 const AXIS_DESC_FONT_SIZE: i32 = 40;
@@ -164,12 +164,30 @@ impl Session {
             if let Some(stats) = self.stats(i, s_type) {
                 if stats < pb {
                     pb = stats;
-                    pbs.push((i + 1, pb, record.clone()));
+                    pbs.push((i, pb, record.clone()));
                 }
             }
         }
 
         pbs
+    }
+
+    /// Converts pbs into plots, prepare for trending image generation.
+    pub fn pbs_to_plots(&self, pbs: &[(usize, Milliseconds, Rc<Record>)]) -> Vec<(usize, u32)> {
+        let n = self.record_count();
+        let mut plots: Vec<(usize, u32)> = (1..=n).map(|i| (i, 0)).collect();
+
+        for window in pbs.windows(2) {
+            let (start, pb) = (window[0].0, window[0].1);
+            let end = window[1].0;
+            plots[start..end].iter_mut().for_each(|p| p.1 = pb);
+        }
+
+        if let Some(&(last, pb, _)) = pbs.last() {
+            plots[last..n].iter_mut().for_each(|p| p.1 = pb);
+        }
+
+        plots
     }
 
     /// Splits times of the specified `StatsType`
@@ -302,8 +320,15 @@ impl Session {
             segments
         };
 
-        let n = self.record_count() + 2;
+        let n = self.record_count();
+        let min = plots
+            .iter()
+            .map(|data| data.1)
+            .filter(|t| *t > 0)
+            .min()
+            .unwrap_or_default();
         let max = plots.iter().map(|data| data.1).max().unwrap_or_default();
+        let (min, max) = (min.as_seconds(), max.as_seconds());
 
         let root = CanvasBackend::with_canvas_object(canvas.clone())
             .ok_or("Failed to acquire canvas backend")?
@@ -312,8 +337,8 @@ impl Session {
 
         let caption = format!("[#{}] {} {} TRENDS", self.rank(), self.name(), desc,);
 
-        let x_spec = 1..n;
-        let y_spec = 0.0..max.as_seconds() * MAGNIFICATION;
+        let x_spec = 1..n + 1;
+        let y_spec = min / MAGNIFICATION..max * MAGNIFICATION;
         let mut chart = ChartBuilder::on(&root)
             .caption(&caption, (MONOSPACE, CAPTION_FONT_SIZE).into_font())
             .margin(MARGIN)

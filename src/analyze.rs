@@ -216,25 +216,23 @@ fn append_section<W: Write>(
             let pbs = session.pbs(stats_type);
 
             if pbs.is_empty() {
-                append_message(
+                return append_message(
                     writer,
                     "INFO",
                     &format!("No PB histories of {}.", stats_type),
-                )
-            } else {
-                let (first_pb, last_pb) = (
-                    pbs[0].1.to_readable_string(),
-                    pbs[pbs.len() - 1].1.to_readable_string(),
                 );
-                let pbs_desc = pbs
-                    .iter()
-                    .map(|pair| pair.1.to_readable_string())
-                    .collect::<Vec<_>>()
-                    .join(" -> ");
+            }
 
-                writeln!(
-                    writer,
-                    r"<details>
+            let (first_pb, last_pb) = (pbs[0].1, pbs[pbs.len() - 1].1);
+            let pbs_desc = pbs
+                .iter()
+                .map(|pair| pair.1.to_readable_string())
+                .collect::<Vec<_>>()
+                .join(" -> ");
+
+            writeln!(
+                writer,
+                r"<details>
 <summary><code>{} -> {}</code></summary>
 
 ```
@@ -243,26 +241,28 @@ fn append_section<W: Write>(
 
 </details>
 ",
-                    first_pb, last_pb, pbs_desc
+                first_pb.to_readable_string(),
+                last_pb.to_readable_string(),
+                pbs_desc
+            )?;
+
+            if matches!(stats_type, StatsType::Single) {
+                append_records_detail(
+                    writer,
+                    &pbs.iter()
+                        .map(|r| (r.0 + 1, r.2.clone()))
+                        .collect::<Vec<_>>(),
                 )?;
+            }
 
-                if matches!(stats_type, StatsType::Single) {
-                    append_records_detail(
-                        writer,
-                        &pbs.iter().map(|r| (r.0, r.2.clone())).collect::<Vec<_>>(),
-                    )?;
-                }
-
-                let mut plots: Vec<(usize, u32)> = pbs.iter().map(|pb| (pb.0, pb.1)).collect();
-                plots.push((session.record_count(), pbs[pbs.len() - 1].1));
-                match session.draw_trending(canvas, &plots, &format!("{} PBs", stats_type)) {
-                    Ok(()) => append_image_data_url(writer, canvas),
-                    Err(e) => append_message(
-                        writer,
-                        "ERROR",
-                        &format!("Generating trending chart failed: {}.", e),
-                    ),
-                }
+            let plots = session.pbs_to_plots(&pbs);
+            match session.draw_trending(canvas, &plots, &format!("{} PBs", stats_type)) {
+                Ok(()) => append_image_data_url(writer, canvas),
+                Err(e) => append_message(
+                    writer,
+                    "ERROR",
+                    &format!("Generating trending chart failed: {}.", e),
+                ),
             }
         }
 

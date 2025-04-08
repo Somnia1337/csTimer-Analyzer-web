@@ -187,12 +187,12 @@ function takeFromExternrefTable0(idx) {
  * @param {HTMLCanvasElement} canvas
  * @returns {any}
  */
-export function analyze_from_files(options_txt, data_txt, canvas) {
+export function wasm_analyze(options_txt, data_txt, canvas) {
     const ptr0 = passArray8ToWasm0(options_txt, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     const ptr1 = passArray8ToWasm0(data_txt, wasm.__wbindgen_malloc);
     const len1 = WASM_VECTOR_LEN;
-    const ret = wasm.analyze_from_files(ptr0, len0, ptr1, len1, canvas);
+    const ret = wasm.wasm_analyze(ptr0, len0, ptr1, len1, canvas);
     if (ret[2]) {
         throw takeFromExternrefTable0(ret[1]);
     }

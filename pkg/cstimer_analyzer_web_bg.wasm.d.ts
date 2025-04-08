@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
-export const analyze_from_files: (a: number, b: number, c: number, d: number, e: any) => [number, number, number];
+export const wasm_analyze: (a: number, b: number, c: number, d: number, e: any) => [number, number, number];
 export const render_markdown: (a: number, b: number) => any;
 export const __wbindgen_exn_store: (a: number) => void;
 export const __externref_table_alloc: () => number;

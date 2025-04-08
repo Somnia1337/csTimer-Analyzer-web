@@ -4,7 +4,7 @@
  * The entrance function of WASM, analyzes
  * a csTimer data file with the specified options.
  */
-export function analyze_from_files(options_txt: Uint8Array, data_txt: Uint8Array, canvas: HTMLCanvasElement): any;
+export function wasm_analyze(options_txt: Uint8Array, data_txt: Uint8Array, canvas: HTMLCanvasElement): any;
 /**
  * Converts the markdown content to HTML, a
  * more time-efficient equivalent to marked.js.
@@ -15,7 +15,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly analyze_from_files: (a: number, b: number, c: number, d: number, e: any) => [number, number, number];
+  readonly wasm_analyze: (a: number, b: number, c: number, d: number, e: any) => [number, number, number];
   readonly render_markdown: (a: number, b: number) => any;
   readonly __wbindgen_exn_store: (a: number) => void;
   readonly __externref_table_alloc: () => number;

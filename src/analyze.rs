@@ -7,7 +7,7 @@ use web_sys::HtmlCanvasElement;
 use crate::options::{AnalysisOption, StatsType};
 use crate::record::Record;
 use crate::session::Session;
-use crate::time::HumanReadable;
+use crate::time::{AsSeconds, HumanReadable};
 
 /// Calculates a percentage.
 fn percentage(count: usize, total: usize) -> f32 {
@@ -62,7 +62,14 @@ fn append_analysis_info<W: Write>(
     )?;
 
     for session in sessions {
-        writeln!(writer, "- [{}](#session{})", session, session.rank(),)?;
+        writeln!(
+            writer,
+            "- [[#{}] **{}** (`{}` records)](#session{})",
+            session.rank(),
+            session.name(),
+            session.record_count(),
+            session.rank()
+        )?;
     }
     writeln!(writer)?;
 
@@ -98,7 +105,7 @@ fn append_session_date_time<W: Write>(writer: &mut W, session: &Session) -> io::
 
     writeln!(
         writer,
-        "- {} ~ {} ({} days)\n- {} day{} actually practiced (`{:.1}%` out of {} days)\n",
+        "- {} ~ {} ({} days)\n- `{}` day{} actually practiced (`{:.1}%` out of {} days)\n",
         start,
         end,
         total_days,
@@ -163,10 +170,15 @@ fn append_message<W: Write>(writer: &mut W, label: &str, content: &str) -> io::R
 }
 
 /// Appends an image data url.
-fn append_image_data_url<W: Write>(writer: &mut W, canvas: &HtmlCanvasElement) -> io::Result<()> {
+fn append_image_data_url<W: Write>(
+    writer: &mut W,
+    canvas: &HtmlCanvasElement,
+    desc: &str,
+) -> io::Result<()> {
     writeln!(
         writer,
-        "![Chart]({})\n",
+        "![{}]({})\n",
+        desc,
         canvas.to_data_url().unwrap_or_default()
     )
 }
@@ -212,15 +224,11 @@ fn append_section<W: Write>(
     match op {
         AnalysisOption::Summary => append_summary_table(writer, session),
 
-        AnalysisOption::Pbs(stats_type) => {
-            let pbs = session.pbs(stats_type);
+        AnalysisOption::Pbs(s_type) => {
+            let pbs = session.pbs(s_type);
 
             if pbs.is_empty() {
-                return append_message(
-                    writer,
-                    "INFO",
-                    &format!("No PB histories of {}.", stats_type),
-                );
+                return append_message(writer, "INFO", &format!("No PB histories of {}.", s_type));
             }
 
             let (first_pb, last_pb) = (pbs[0].1, pbs[pbs.len() - 1].1);
@@ -246,31 +254,40 @@ fn append_section<W: Write>(
                 pbs_desc
             )?;
 
-            if matches!(stats_type, StatsType::Single) {
+            let trends = session.pbs_trends(&pbs);
+            let desc = format!("{}: {} PBs", session, s_type);
+            match session.draw_trending(canvas, &trends, &desc) {
+                Ok(()) => append_image_data_url(writer, canvas, &desc)?,
+                Err(e) => append_message(
+                    writer,
+                    "ERROR",
+                    &format!("Generating trending chart failed: {}.", e),
+                )?,
+            }
+
+            if matches!(s_type, StatsType::Single) {
                 append_records_detail(
                     writer,
                     &pbs.iter()
                         .map(|r| (r.0 + 1, r.2.clone()))
                         .collect::<Vec<_>>(),
-                )?;
-            }
-
-            let plots = session.pbs_to_plots(&pbs);
-            match session.draw_trending(canvas, &plots, &format!("{} PBs", stats_type)) {
-                Ok(()) => append_image_data_url(writer, canvas),
-                Err(e) => append_message(
-                    writer,
-                    "ERROR",
-                    &format!("Generating trending chart failed: {}.", e),
-                ),
+                )
+            } else {
+                Ok(())
             }
         }
 
         AnalysisOption::Group(s_type, interval) => {
             let groups = session.group(*interval, s_type);
 
-            match session.draw_grouping(canvas, &groups, *interval, &s_type.to_string()) {
-                Ok(()) => append_image_data_url(writer, canvas),
+            let desc = format!(
+                "{}: {} GROUPS (by {}s)",
+                session,
+                s_type,
+                interval.as_seconds()
+            );
+            match session.draw_grouping(canvas, &groups, *interval, &desc) {
+                Ok(()) => append_image_data_url(writer, canvas, &desc),
                 Err(e) => append_message(
                     writer,
                     "ERROR",
@@ -279,12 +296,17 @@ fn append_section<W: Write>(
             }
         }
 
-        AnalysisOption::Trend(stats_type) => {
-            let plots = session.trend(stats_type);
+        AnalysisOption::Trend(s_type) => {
+            let trends = session.trend(s_type);
 
-            match session.draw_trending(canvas, &plots, &stats_type.to_string()) {
+            if trends.iter().all(|p| p.1 == 0) {
+                return append_message(writer, "INFO", &format!("No PB history for {}.", s_type));
+            }
+
+            let desc = format!("{}: {} TRENDS", session, s_type);
+            match session.draw_trending(canvas, &trends, &desc) {
                 Ok(()) => {
-                    append_image_data_url(writer, canvas)?;
+                    append_image_data_url(writer, canvas, &desc)?;
                     append_message(writer, "TIPS", "DNF & N/A are treated as empty points.")
                 }
                 Err(e) => append_message(
@@ -327,7 +349,13 @@ pub fn analyze<W: Write>(
     for session in sessions {
         let session_timer = Instant::now();
 
-        let session_heading = format!("<a id=\"session{}\">{}</a>", session.rank(), session);
+        let session_heading = format!(
+            "<a id=\"session{}\">[#{}] **{}** (`{}` records)</a>",
+            session.rank(),
+            session.rank(),
+            session.name(),
+            session.record_count(),
+        );
         append_heading(writer, 3, &session_heading)?;
         append_session_date_time(writer, session)?;
 

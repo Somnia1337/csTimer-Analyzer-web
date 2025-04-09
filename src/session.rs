@@ -77,13 +77,7 @@ impl Session {
 
 impl fmt::Display for Session {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(
-            f,
-            "[#{}] **{}** (`{}` records)",
-            self.rank(),
-            self.name(),
-            self.record_count(),
-        )
+        writeln!(f, "[#{}] {}", self.rank(), self.name())
     }
 }
 

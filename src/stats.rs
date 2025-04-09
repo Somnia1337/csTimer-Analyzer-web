@@ -12,15 +12,18 @@ use crate::session::{GroupTime, Session};
 use crate::time::{AsSeconds, HumanReadable, Milliseconds, Seconds};
 
 const CUT_OFF: f32 = 0.05;
-const MAGNIFICATION: f32 = 1.05;
-const MONOSPACE: &str = "JetBrains Mono, Consolas, Courier New";
-const CAPTION_FONT_SIZE: i32 = 48;
-const AXIS_DESC_FONT_SIZE: i32 = 40;
-const LABEL_FONT_SIZE: i32 = 32;
+
 const MARGIN: i32 = 20;
+const SPACING_RATE: f32 = 0.05;
+const STROKE_WIDTH: u32 = 4;
+
+const AXIS_DESC_FONT_SIZE: i32 = 40;
+const CAPTION_FONT_SIZE: i32 = 48;
 const LABEL_AREA_SIZE: i32 = 160;
+const LABEL_FONT_SIZE: i32 = 32;
+
+const MONOSPACE: &str = "JetBrains Mono, Consolas, Courier New";
 const PLOT_COLOR: RGBColor = RGBColor(91, 169, 253);
-const STROKE_WIDTH: u32 = 3;
 
 /// The plain arithmetic mean over a sum of
 /// Milliseconds, rounds at 1 millis.
@@ -68,7 +71,7 @@ impl Session {
             }
 
             StatsType::Mean(s_scale) => {
-                let chunk = &self.records()[(pos + 1).saturating_sub(*s_scale)..=pos];
+                let chunk = &self.records()[pos + 1 - s_scale..=pos];
 
                 if chunk.iter().any(|r| r.solve_state().is_dnf()) {
                     None
@@ -78,7 +81,7 @@ impl Session {
             }
 
             StatsType::Average(s_scale) => {
-                let chunk = &self.records()[(pos + 1).saturating_sub(*s_scale)..=pos];
+                let chunk = &self.records()[pos + 1 - s_scale..=pos];
                 let cut_off = (*s_scale as f32 * CUT_OFF).ceil() as usize;
                 let take = s_scale.saturating_sub(cut_off * 2);
 
@@ -127,7 +130,7 @@ impl Session {
     }
 
     /// The best, worst, mean and average solve times of the `Session`,
-    /// where average could be DNF represented by `None`.
+    /// where the average could be DNF represented by `None`.
     pub fn summary(
         &self,
     ) -> (
@@ -153,8 +156,8 @@ impl Session {
         )
     }
 
-    /// Every `Record` that breaked the personal best
-    /// of the specified `StatsType`, with the new PB.
+    /// `Record`s that breaked the personal best of the
+    /// specified `StatsType`, with its index and the new PB.
     pub fn pbs(&self, s_type: &StatsType) -> Vec<(usize, Milliseconds, Rc<Record>)> {
         let s_scale = s_type.scale();
         let mut pb = u32::MAX;
@@ -164,7 +167,7 @@ impl Session {
             if let Some(stats) = self.stats(i, s_type) {
                 if stats < pb {
                     pb = stats;
-                    pbs.push((i, pb, record.clone()));
+                    pbs.push((i, pb, Rc::clone(record)));
                 }
             }
         }
@@ -172,22 +175,22 @@ impl Session {
         pbs
     }
 
-    /// Converts pbs into plots, prepare for trending image generation.
-    pub fn pbs_to_plots(&self, pbs: &[(usize, Milliseconds, Rc<Record>)]) -> Vec<(usize, u32)> {
+    /// A trend of time of pbs over solves.
+    pub fn pbs_trends(&self, pbs: &[(usize, Milliseconds, Rc<Record>)]) -> Vec<(usize, u32)> {
         let n = self.record_count();
-        let mut plots: Vec<(usize, u32)> = (1..=n).map(|i| (i, 0)).collect();
+        let mut trends: Vec<(usize, u32)> = (0..n).map(|i| (i + 1, 0)).collect();
 
-        for window in pbs.windows(2) {
-            let (start, pb) = (window[0].0, window[0].1);
-            let end = window[1].0;
-            plots[start..end].iter_mut().for_each(|p| p.1 = pb);
-        }
+        pbs.windows(2).for_each(|w| {
+            let (start, pb) = (w[0].0, w[0].1);
+            let end = w[1].0;
+            trends[start..end].iter_mut().for_each(|p| p.1 = pb);
+        });
 
         if let Some(&(last, pb, _)) = pbs.last() {
-            plots[last..n].iter_mut().for_each(|p| p.1 = pb);
+            trends[last..n].iter_mut().for_each(|p| p.1 = pb);
         }
 
-        plots
+        trends
     }
 
     /// Splits times of the specified `StatsType`
@@ -237,28 +240,18 @@ impl Session {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let count_max = groups.iter().map(|g| g.1).max().unwrap_or_default();
 
-        let (secs_min, secs_max) = (
-            groups[0].0.as_seconds(),
-            groups[groups.len() - 1].0.as_seconds(),
-        );
+        let (t_min, t_max) = (groups[0].0, groups[groups.len() - 1].0);
 
         let root = CanvasBackend::with_canvas_object(canvas.clone())
             .ok_or("Failed to acquire canvas backend")?
             .into_drawing_area();
         root.fill(&WHITE)?;
 
-        let caption = format!(
-            "[#{}] {} {} GROUPS (by {}s)",
-            self.rank(),
-            self.name(),
-            desc,
-            interval.as_seconds(),
-        );
-
-        let x_spec = (secs_min.max(1.0) - 1.0)..(secs_max + 1.0);
-        let y_spec = 0u32..(count_max as f32 * MAGNIFICATION) as u32;
+        let margin = (interval.as_seconds() * SPACING_RATE * 100.0).min(2.0);
+        let x_spec = (t_min.as_seconds().max(margin) - margin)..(t_max.as_seconds() + margin);
+        let y_spec = 0u32..(count_max as f32 * (1.0 + SPACING_RATE)) as u32;
         let mut chart = ChartBuilder::on(&root)
-            .caption(caption, (MONOSPACE, CAPTION_FONT_SIZE).into_font())
+            .caption(desc, (MONOSPACE, CAPTION_FONT_SIZE).into_font())
             .margin(MARGIN)
             .x_label_area_size(LABEL_AREA_SIZE)
             .y_label_area_size(LABEL_AREA_SIZE)
@@ -296,7 +289,7 @@ impl Session {
     pub fn draw_trending(
         &self,
         canvas: &HtmlCanvasElement,
-        plots: &[(usize, u32)],
+        trends: &[(usize, u32)],
         desc: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let real_point_segments = |times: &[(usize, u32)]| -> Vec<(usize, usize)> {
@@ -321,26 +314,25 @@ impl Session {
         };
 
         let n = self.record_count();
-        let min = plots
+        let min = trends
             .iter()
             .map(|data| data.1)
             .filter(|t| *t > 0)
             .min()
             .unwrap_or_default();
-        let max = plots.iter().map(|data| data.1).max().unwrap_or_default();
-        let (min, max) = (min.as_seconds(), max.as_seconds());
+        let max = trends.iter().map(|data| data.1).max().unwrap_or_default();
+        let (t_min, t_max) = (min.as_seconds(), max.as_seconds());
 
         let root = CanvasBackend::with_canvas_object(canvas.clone())
             .ok_or("Failed to acquire canvas backend")?
             .into_drawing_area();
         root.fill(&WHITE)?;
 
-        let caption = format!("[#{}] {} {} TRENDS", self.rank(), self.name(), desc,);
-
+        let margin = (t_max - t_min) * SPACING_RATE;
         let x_spec = 1..n + 1;
-        let y_spec = min / MAGNIFICATION..max * MAGNIFICATION;
+        let y_spec = (t_min - margin).max(0.0)..t_max + margin;
         let mut chart = ChartBuilder::on(&root)
-            .caption(&caption, (MONOSPACE, CAPTION_FONT_SIZE).into_font())
+            .caption(desc, (MONOSPACE, CAPTION_FONT_SIZE).into_font())
             .margin(MARGIN)
             .x_label_area_size(LABEL_AREA_SIZE)
             .y_label_area_size(LABEL_AREA_SIZE)
@@ -354,9 +346,9 @@ impl Session {
             .y_label_formatter(&Seconds::to_readable_string)
             .draw()?;
 
-        for (start, end) in real_point_segments(plots) {
+        for (start, end) in real_point_segments(trends) {
             chart.draw_series(LineSeries::new(
-                (start..end).map(|i| (plots[i].0, plots[i].1.as_seconds())),
+                (start..end).map(|i| (trends[i].0, trends[i].1.as_seconds())),
                 PLOT_COLOR.stroke_width(STROKE_WIDTH),
             ))?;
         }
@@ -371,8 +363,8 @@ impl Session {
         self.records()
             .iter()
             .enumerate()
-            .filter(|(_, r)| !r.comment().is_empty())
-            .map(|(i, r)| (i + 1, Rc::clone(r)))
+            .filter(|(_, record)| !record.comment().is_empty())
+            .map(|(i, record)| (i + 1, Rc::clone(record)))
             .collect()
     }
 }

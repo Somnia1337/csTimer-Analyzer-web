@@ -134,11 +134,11 @@ impl fmt::Display for AnalysisOption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let label = match self {
             Self::Summary => String::from("Summary"),
-            Self::Pbs(stats_type) => format!("PBs(**{}**)", stats_type),
-            Self::Group(stats_type, interval) => {
-                format!("Group(**{}**, by {}s)", stats_type, interval.as_seconds())
+            Self::Pbs(s_type) => format!("PBs(**{}**)", s_type),
+            Self::Group(s_type, interval) => {
+                format!("Group(**{}**, by {}s)", s_type, interval.as_seconds())
             }
-            Self::Trend(stats_type) => format!("Trend(**{}**)", stats_type),
+            Self::Trend(s_type) => format!("Trend(**{}**)", s_type),
             Self::Commented => String::from("Commented"),
         };
 

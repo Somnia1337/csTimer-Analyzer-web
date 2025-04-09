@@ -45,16 +45,14 @@ summary
 
 # Pb histories
 pbs(single)
-pbs(mo5)
-pbs(ao50)
+pbs(mo3)
 
 # Grouping histograms
 group(single, 500)  # 500ms
-group(single, 1000) # 1000ms
 
 # Trending charts
-trend(mo5)
-trend(ao200)
+trend(ao12)
+trend(ao100)
 
 # Commented records
 commented
@@ -65,4 +63,6 @@ commented
 - feat:
     - i18n.
     - shows report half-blockingly (refreshes after analyzing a session).
+    - treat `StatsScale` 0 as "auto"
 - docs: add `changelog.md`.
+- test: add test modules

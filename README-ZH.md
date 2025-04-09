@@ -45,16 +45,14 @@ summary
 
 # 个人最佳成绩历史
 pbs(single)
-pbs(mo5)
-pbs(ao50)
+pbs(mo3)
 
 # 直方图
 group(single, 500)  # 500ms
-group(single, 1000) # 1000ms
 
 # 趋势图
-trend(mo5)
-trend(ao200)
+trend(ao12)
+trend(ao100)
 
 # 有注释的记录
 commented
@@ -65,4 +63,6 @@ commented
 - 功能：
     - 国际化。
     - 以半阻塞的方式展示报告（分析完新的分组即刷新）。
+    - 将 `StatsScale` 0 视为“自动”
 - 文档：添加 `变更记录.md`。
+- 测试：添加测试模块

@@ -241,7 +241,7 @@ fn append_section<W: Write>(
             writeln!(
                 writer,
                 r"<details>
-<summary><code>{} -> {}</code></summary>
+<summary><code>{} -> {}</code> (<code>{}</code> PBs)</summary>
 
 ```
 {}
@@ -251,7 +251,8 @@ fn append_section<W: Write>(
 ",
                 first_pb.to_readable_string(),
                 last_pb.to_readable_string(),
-                pbs_desc
+                pbs.len(),
+                pbs_desc,
             )?;
 
             let trends = session.pbs_trends(&pbs);
@@ -300,7 +301,7 @@ fn append_section<W: Write>(
             let trends = session.trend(s_type);
 
             if trends.iter().all(|p| p.1 == 0) {
-                return append_message(writer, "INFO", &format!("No PB history for {}.", s_type));
+                return append_message(writer, "INFO", &format!("Every {} is DNF.", s_type));
             }
 
             let desc = format!("{}: {} TRENDS", session, s_type);

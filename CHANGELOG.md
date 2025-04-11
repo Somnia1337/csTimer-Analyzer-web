@@ -1,0 +1,292 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.7.6] - 2025-04-09
+
+### Changed
+
+- Margins for charts.
+- Descriptive texts for charts.
+- Default analysis options.
+
+## [0.7.5] - 2025-04-08
+
+### Fixed
+
+- `PBs` chart can be misleading.
+
+## [0.7.4] - 2025-04-08
+
+### Added
+
+- Chart for `PBs`.
+
+### Changed
+
+- Introduce constants in `stats.rs` to clarify chart generators.
+- Rename wasm entrance function to `wasm_analyze`.
+- Accept code suggestions from Clippy.
+
+### Documentation
+
+- Update cover images.
+- Add missing documentation for functions and traits.
+
+## [0.7.3] - 2025-04-05
+
+### Changed
+
+- Encapsulate some redundant code.
+- Accept code suggestions from Clippy.
+
+## [0.7.2] - 2025-04-04
+
+### Added
+
+- Display the oldest and newest (slowest and fastest) PBs in `PBs`.
+
+### Changed
+
+- Tip for the collapsible element is now "... more records" instead of "Expand".
+
+### Fixed
+
+- Paths to fonts in `style.css`.
+
+### Documentation
+
+- Update `example.txt`.
+
+## [0.7.1] - 2025-04-04
+
+### Added
+
+- Display of days actually practiced in a session.
+- Auto line-wrapping for `PBs` code block.
+- Various textual and visual tweaks.
+
+### Fixed
+
+- Duplicate analysis options not properly removed.
+- `Session::group` not respecting the specified `StatsType`.
+
+### Changed
+
+- Rename and reorganize modules.
+- Move CSS styles into `style.css`.
+
+### Documentation
+
+- Docs coverage for fields and functions reach 100%.
+- "Todo" section in READMEs.
+
+## [0.7.0] - 2025-04-01
+
+### Changed
+
+- Rename (shortened) some analysis options.
+    - `Overview` is now `Summary`.
+    - `PbHistory` is now `PBs`.
+    - `Grouping` is now `Group`.
+    - `Trending` is now `Trend`.
+
+### Fixed
+
+- Erroneous behaviors when stats results are empty.
+
+### Security
+
+- Eliminate bare `unwrap()`s.
+- Provide more info when something goes wrong.
+
+## [0.6.0] - 2025-03-31
+
+### Added
+
+- Treat DNFs as empty points in trending chart.
+- "Timings" chapter, containing info about timings.
+
+### Changed
+
+- Rename and optimize functions.
+- Accept code suggestions from Clippy.
+
+### Fixed
+
+- Average stats differ from csTimer.
+
+## [0.5.3] - 2025-03-30
+
+### Fixed
+
+- Remove "UTC" after every date-time display, since it now respects local timezone.
+
+## [0.5.2] - 2025-03-30
+
+### Added
+
+- The local time offset from UTC to every date-time, they now respect the local timezone.
+
+## [0.5.1] - 2025-03-30
+
+### Changed
+
+- Contents in the table cells are now center aligned.
+
+### Fixed
+
+- Tables rendered as plaintext after replacing `marked.js`.
+
+### Documentation
+
+- Change paths to cover images in READMEs, using `./assets` instead of GitHub raw contents.
+
+## [0.5.0] - 2025-03-30
+
+### Changed
+
+- Replace `marked.js` with Rust crate `pulldown-cmark`, improving rendering performance.
+
+## [0.4.4] - 2025-03-30
+
+### Added
+
+- Generation timing info for each paragraph, session and the whole analysis.
+
+## [0.4.3] - 2025-03-30
+
+### Fixed
+
+- Asterisks in comments can lead to undesired parsing results.
+
+### Changed
+
+- Update `favicon.ico`.
+
+### Documentation
+
+- Add cover images for the repo.
+- Rename "分析器" to "分析师" in `README-ZH.md`.
+
+## [0.4.2] - 2025-03-29
+
+### Added
+
+- Description for grouping chart.
+
+## [0.4.1] - 2025-03-29
+
+### Changed
+
+- Replace "upload" with "select" in `index.html` since the user data literally never uploads.
+- Move JS scripts into JS files under `./js`.
+- Optimize CSS styles.
+
+### Fixed
+
+- Comments not redered as `<strong>` when there are padding whitespaces.
+- Links to docs and `example.txt`.
+- Headers in analysis report have wrong colors.
+- Undesired behaviors while analyzing.
+    - Cursor turns into a pointer.
+    - Web page is horizontally draggable.
+
+### Documentation
+
+- Fix links to GitHub Pages.
+- Time interval descriptions for `Grouping`.
+- Update `example.txt`, adding aliases for sessions.
+
+## [0.4.0] - 2025-03-28
+
+### Added
+
+- Use JSON instead of Regex for parsing data in different formats (like that of a bluetooth cube).
+- Collapsible elements folding `PBs(single)` and `Commented` record details (since they can be way too long).
+- Useful links to csTimer, READMEs and source repo.
+- A feedback submission element.
+- An example input textfile `example.txt`.
+
+### Changed
+
+- Rename `file.rs` to `json.rs` to better represent its functionalities.
+- Rework fields and functions for `Session`.
+- Swap the CSS styles of scramble and comment, with scramble being italic and comment being strong.
+- Rename some functions in `impl Session`.
+- Move icon files into `./assets`.
+
+### Fixed
+
+- Parsing bluetooth cube data fails.
+- Time less than 10s differs from that in csTimer.
+- Erroneous charts when the minimum time in a session is less than 1s.
+- Time less than 1s displayed with redundant zeroes.
+
+## [0.3.3] - 2025-03-23
+
+### Fixed
+
+- Parameters passed to image generating functions.
+- Link to `favicon.ico` in `index.html`.
+
+### Removed
+
+- All functions and types that are useless in web.
+- `ObsidianFlavor` option since it's useless in web.
+
+## [0.3.2] - 2025-03-22
+
+### Added
+
+- Icon file `favicon.ico`.
+
+## [0.3.1] - 2025-03-22
+
+### Fixed
+
+- Default options differ from docs.
+
+## [0.3.0] - 2025-03-22
+
+### Added
+
+- HTML canvas element and JS scripts to port image generation feature.
+
+### Documentation
+
+- Add READMEs.
+
+## [0.2.1] - 2025-03-22
+
+### Fixed
+
+- Rename wasm packages to match the project name.
+
+## [0.2.0] - 2025-03-22
+
+### Added
+
+- The Rust source code.
+
+## [0.1.2] - 2025-03-22
+
+### Changed
+
+- Improve CSS styles.
+
+## [0.1.1] - 2025-03-22
+
+### Added
+
+- Simple CSS styles.
+
+## [0.1.0] - 2025-03-22
+
+### Added
+
+- This project as the web port of `csTimer-Analyzer`, hopefully serve as a secure, fast, configurable, and flexible tool for analyzing cubing practice data from csTimer.
+- A simple webpage interface `index.html`.
+- wasm packages.

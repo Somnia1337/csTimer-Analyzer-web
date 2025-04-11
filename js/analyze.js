@@ -8,7 +8,7 @@ async function run() {
   await init();
   const optionsText = document.getElementById("options").value;
   const file2 = document.getElementById("file2").files[0];
-  const resultDiv = document.getElementById("result");
+  const markdownContent = document.getElementById("markdown-content");
   const loader = document.getElementById("loader");
   const errorMessage = document.getElementById("error-message");
   const errorText = document.getElementById("error-text");
@@ -52,9 +52,9 @@ async function run() {
         canvas
       );
 
-      resultDiv.innerHTML = render_markdown(result);
+      markdownContent.innerHTML = render_markdown(result);
       loader.classList.remove("active");
-      resultDiv.scrollIntoView({ behavior: "smooth", block: "start" });
+      markdownContent.scrollIntoView({ behavior: "smooth", block: "start" });
 
       canvas.remove();
     } catch (e) {

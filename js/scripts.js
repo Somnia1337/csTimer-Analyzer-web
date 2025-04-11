@@ -1,75 +1,34 @@
 import init, { render_markdown } from "../pkg/cstimer_analyzer_web.js";
 
 document.addEventListener("DOMContentLoaded", function () {
-  initializeModalHandlers();
+  initializeDocsButton("./README-ZH.md", "readme-button", "README");
+  initializeDocsButton("./CHANGELOG.md", "changelog-button", "Changelog");
   initializeExampleButton();
-  initializeFeedbackForm();
   initializeFileSelection();
 });
 
-function initializeModalHandlers() {
-  const infoButton = document.getElementById("info-button");
-  const modal = document.getElementById("readme-modal");
-  const closeModal = document.getElementById("close-modal");
-  const langToggle = document.getElementById("lang-toggle");
-  const readmeContent = document.getElementById("readme-content");
-  let currentLang = "zh";
+function initializeDocsButton(path, id, desc) {
+  const docsButton = document.getElementById(id);
+  const markdownContent = document.getElementById("markdown-content");
 
-  infoButton.addEventListener("click", async function () {
-    modal.classList.add("active");
-    modal.setAttribute("aria-hidden", "false");
-    await loadReadme(currentLang);
-  });
-
-  closeModal.addEventListener("click", function () {
-    modal.classList.remove("active");
-    modal.setAttribute("aria-hidden", "true");
-  });
-
-  modal.addEventListener("click", function (e) {
-    if (e.target === modal) {
-      modal.classList.remove("active");
-      modal.setAttribute("aria-hidden", "true");
-    }
-  });
-
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && modal.classList.contains("active")) {
-      modal.classList.remove("active");
-      modal.setAttribute("aria-hidden", "true");
-    }
-  });
-
-  langToggle.addEventListener("click", async function () {
-    if (currentLang === "en") {
-      currentLang = "zh";
-      langToggle.textContent = "English";
-    } else {
-      currentLang = "en";
-      langToggle.textContent = "中文";
-    }
-    await loadReadme(currentLang);
-  });
-
-  async function loadReadme(lang) {
-    const readmeUrl = lang === "zh" ? "./README-ZH.md" : "./README.md";
-
+  docsButton.addEventListener("click", async function () {
     try {
-      readmeContent.innerHTML =
-        '<div class="loader active"><div class="loader-spinner"></div><p>Loading README...</p></div>';
+      markdownContent.innerHTML = `<div class="loader active"><div class="loader-spinner"></div><p>Loading ${desc}...</p></div>`;
 
-      const response = await fetch(readmeUrl);
+      const response = await fetch(path);
       if (!response.ok) {
-        throw new Error(`Failed to load README: ${response.statusText}`);
+        throw new Error(`Failed to load ${desc}: ${response.statusText}`);
       }
 
-      const markdown = await response.text();
+      const docs = await response.text();
       await init();
-      readmeContent.innerHTML = render_markdown(markdown);
+      markdownContent.innerHTML = render_markdown(docs);
+      loader.classList.remove("active");
+      markdownContent.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (error) {
-      readmeContent.innerHTML = `<div class="error-message active">Error loading README: ${error.message}</div>`;
+      markdownContent.innerHTML = `<div class="error-message active">Error loading Changelog: ${error.message}</div>`;
     }
-  }
+  });
 }
 
 function initializeExampleButton() {
@@ -113,50 +72,6 @@ function initializeExampleButton() {
       errorMessage.classList.add("active");
       label.textContent = "Error loading example";
     }
-  });
-}
-
-function initializeFeedbackForm() {
-  const submitFeedbackBtn = document.getElementById("submit-feedback");
-  const feedbackText = document.getElementById("feedback-text");
-  const feedbackStatus = document.getElementById("feedback-status");
-
-  submitFeedbackBtn.addEventListener("click", function () {
-    if (!feedbackText.value.trim()) {
-      feedbackStatus.textContent = "Please enter some feedback";
-      feedbackStatus.className = "feedback-status error";
-      return;
-    }
-
-    submitFeedbackBtn.disabled = true;
-    feedbackStatus.textContent = "Sending... This may take up to a minute.";
-    feedbackStatus.className = "feedback-status";
-
-    Email.send({
-      Host: "smtp.elasticemail.com",
-      Username: "2581063732@qq.com",
-      Password: "035BB2FB8E77484CF1A6D36FBFED6FBE1181",
-      To: "somnia1337x@gmail.com",
-      From: "somnia1337x@gmail.com",
-      Subject: "csTimer-Analyzer-web Feedback",
-      Body: `<h2>Feedback from csTimer Analyzer</h2>
-         <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-         <p><strong>Message:</strong></p>
-         <p>${feedbackText.value.replace(/\n/g, "<br>")}</p>`,
-    }).then(function (message) {
-      submitFeedbackBtn.disabled = false;
-
-      if (message === "OK") {
-        feedbackStatus.textContent = "Thank you for your feedback!";
-        feedbackStatus.className = "feedback-status success";
-        feedbackText.value = "";
-      } else {
-        feedbackStatus.textContent =
-          "Error sending feedback. Please try again.";
-        feedbackStatus.className = "feedback-status error";
-        console.error("SMTP error:", message);
-      }
-    });
   });
 }
 

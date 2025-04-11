@@ -18,6 +18,21 @@
           <i class="fas fa-cube"></i>
         </div>
         <h2>csTimer Analyzer v0.7.6</h2>
+        <div class="version-bar">
+          <code class="version-history"
+            >Versions: <strong>0.7.6</strong> &larr; 0.7.5 &larr;
+            <span
+              class="older-versions"
+              title="0.7.4, 0.7.3, 0.7.2, 0.7.1,
+0.7.0, 0.6.0, 0.5.3, 0.5.2,
+0.5.1, 0.5.0, 0.4.4, 0.4.3,
+0.4.2, 0.4.1, 0.4.0, 0.3.3,
+0.3.2, 0.3.1, 0.3.0, 0.2.1,
+0.2.0, 0.1.2, 0.1.1, 0.1.0"
+              >earlier</span
+            ></code
+          >
+        </div>
         <div class="header-actions">
           <a
             href="https://www.cstimer.net/"
@@ -32,11 +47,18 @@
             />
           </a>
           <button
-            id="info-button"
-            class="info-button"
+            id="readme-button"
+            class="readme-button"
             aria-label="Show information"
           >
             <i class="fas fa-info-circle"></i>
+          </button>
+          <button
+            id="changelog-button"
+            class="changelog-button"
+            aria-label="Show changelog"
+          >
+            <i class="fas fa-history"></i>
           </button>
           <a
             href="https://github.com/Somnia1337/csTimer-Analyzer-web"
@@ -61,8 +83,10 @@
           <textarea
             id="options"
             placeholder="Enter your analysis options here..."
-            rows="18"
+            rows="20"
           >
+# The options for analysis | 分析选项
+
 # Comment starts with '#' | 注释以 '#' 开头
 
 # Summary | 分组概览
@@ -72,7 +96,7 @@ summary
 pbs(single)
 pbs(mo3)
 
-# Grouping histograms | 直方图
+# Grouping charts | 直方图
 group(single, 500)  # 500ms
 
 # Trending charts | 趋势图
@@ -116,22 +140,16 @@ commented</textarea
               <i class="fas fa-file-alt"></i>
               <span id="filename-display"></span>
             </div>
-            <div class="feedback-container">
-              <label class="option-label" for="feedback-text">
-                <i class="fas fa-comment"></i> Feedback
-              </label>
-              <textarea
-                id="feedback-text"
-                class="feedback-textarea"
-                placeholder="Enter your feedback here..."
-              ></textarea>
-              <div class="feedback-actions">
-                <button id="submit-feedback" class="submit-feedback-btn">
-                  Submit Feedback
-                </button>
-                <span id="feedback-status" class="feedback-status"></span>
-              </div>
-            </div>
+            <iframe
+              data-tally-src="https://tally.so/embed/3y7ypg?alignLeft=0&hideTitle=1&transparentBackground=1"
+              loading="lazy"
+              width="100%"
+              height="342"
+              frameborder="0"
+              marginheight="0"
+              marginwidth="0"
+              title="Feedback"
+            ></iframe>
           </div>
         </div>
       </div>
@@ -141,34 +159,30 @@ commented</textarea
         <p>Analyzing...</p>
       </div>
 
-      <div id="result" style="font-size: large">
+      <div id="markdown-content" style="font-size: large">
         <strong>Waiting for data file selection...</strong>
       </div>
     </div>
 
-    <div
-      id="readme-modal"
-      class="modal"
-      role="dialog"
-      aria-labelledby="modal-title"
-      aria-hidden="true"
-    >
-      <div class="modal-content">
-        <div class="modal-header">
-          <div class="modal-title" id="modal-title">README</div>
-          <div class="modal-controls">
-            <button id="lang-toggle" class="lang-toggle">English</button>
-            <button id="close-modal" class="close-modal" aria-label="Close">
-              &times;
-            </button>
-          </div>
-        </div>
-        <div id="readme-content" class="modal-body"></div>
-      </div>
-    </div>
-
-    <script src="https://smtpjs.com/v3/smtp.js" defer></script>
     <script type="module" src="js/scripts.js" defer></script>
-    <script type="module" src="js/analyzer.js"></script>
+    <script type="module" src="js/analyze.js"></script>
+    <script>
+      var d = document,
+        w = "https://tally.so/widgets/embed.js",
+        v = function () {
+          "undefined" != typeof Tally
+            ? Tally.loadEmbeds()
+            : d
+                .querySelectorAll("iframe[data-tally-src]:not([src])")
+                .forEach(function (e) {
+                  e.src = e.dataset.tallySrc;
+                });
+        };
+      if ("undefined" != typeof Tally) v();
+      else if (d.querySelector('script[src="' + w + '"]') == null) {
+        var s = d.createElement("script");
+        (s.src = w), (s.onload = v), (s.onerror = v), d.body.appendChild(s);
+      }
+    </script>
   </body>
 </html>

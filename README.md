@@ -38,6 +38,8 @@ The analyzer reads your options from the textarea, here's how to write it.
 Check below for a real example of options.
 
 ```text
+# The options for analysis
+
 # Comment starts with '#'
 
 # Summary
@@ -47,7 +49,7 @@ summary
 pbs(single)
 pbs(mo3)
 
-# Grouping histograms
+# Grouping charts
 group(single, 500)  # 500ms
 
 # Trending charts

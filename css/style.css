@@ -93,7 +93,8 @@ h2 {
   position: relative;
 }
 
-.info-button,
+.readme-button,
+.changelog-button,
 .github-link {
   background: none;
   border: none;
@@ -103,13 +104,15 @@ h2 {
   transition: var(--transition);
 }
 
-.info-button {
+.readme-button,
+.changelog-button {
   margin-right: 1rem;
   margin-top: 0.3rem;
   padding: 0;
 }
 
-.info-button:hover,
+.readme-button:hover,
+.changelog-button:hover,
 .github-link:hover {
   color: var(--accent-color);
 }
@@ -130,6 +133,33 @@ h2 {
 
 .cstimer-link:hover .cstimer-icon {
   transform: scale(1.1);
+}
+
+.version-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  margin: auto;
+}
+
+.version-history {
+  font-family: "JetBrains MONO", "Consolas", "Courier New", monospace;
+  background-color: hsla(var(--primary-color-hsl), 0.08);
+  color: var(--text-color);
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.version-history strong {
+  color: var(--primary-color);
+}
+
+.older-versions {
+  color: var(--primary-color);
+  text-decoration: underline dotted;
+  cursor: help;
 }
 
 /* Input group styles */
@@ -159,7 +189,6 @@ h2 {
   display: flex;
   align-items: center;
   gap: 0.8rem;
-  margin-bottom: 0.5rem;
 }
 
 .option-label {
@@ -296,152 +325,6 @@ textarea:focus {
   background-color: var(--accent-color);
 }
 
-/* Feedback styles */
-.feedback-container {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-}
-
-.feedback-textarea {
-  width: 100%;
-  padding: 0.8rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fcfcfc;
-  font-family: inherit;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: #444;
-  resize: vertical;
-  transition: var(--transition);
-  min-height: 100px;
-  margin-bottom: 0.8rem;
-}
-
-.feedback-textarea:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.2);
-}
-
-.feedback-actions {
-  display: flex;
-  align-items: center;
-}
-
-.submit-feedback-btn {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.6rem 1.2rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.submit-feedback-btn:hover {
-  background-color: var(--secondary-color);
-}
-
-.feedback-status {
-  margin-left: 1rem;
-  font-size: 0.9rem;
-}
-
-.feedback-status.success {
-  color: #4caf50;
-}
-
-.feedback-status.error {
-  color: #f44336;
-}
-
-/* Modal styles */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 100;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal.active {
-  display: flex;
-  animation: fadeIn 0.3s;
-}
-
-.modal-content {
-  background-color: var(--card-bg);
-  border-radius: var(--border-radius);
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #eee;
-}
-
-.modal-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--primary-color);
-}
-
-.modal-controls {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-}
-
-.lang-toggle {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
-  margin-right: 1rem;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: var(--transition);
-}
-
-.lang-toggle:hover {
-  background-color: var(--secondary-color);
-}
-
-.close-modal {
-  background: none;
-  border: none;
-  font-size: 1.8rem;
-  cursor: pointer;
-  color: #666;
-  transition: var(--transition);
-}
-
-.close-modal:hover {
-  color: var(--accent-color);
-}
-
-.modal-body {
-  padding: 1.5rem;
-  overflow-y: auto;
-}
-
 /* Error and loader styles */
 .error-message {
   padding: 1rem;
@@ -479,7 +362,7 @@ textarea:focus {
 }
 
 /* Results styling */
-#result {
+#markdown-content {
   margin-top: 2rem;
   padding: 2rem;
   background: #fff;
@@ -491,7 +374,7 @@ textarea:focus {
   line-height: 1.6;
 }
 
-#result h1 {
+#markdown-content h1 {
   font-size: 2em;
   margin-top: 1.2em;
   margin-bottom: 0.8em;
@@ -499,36 +382,36 @@ textarea:focus {
   border-bottom: 1px solid #eee;
 }
 
-#result h2 {
+#markdown-content h2 {
   font-size: 1.8em;
   margin-top: 1.2em;
   margin-bottom: 0.8em;
 }
 
-#result h3 {
+#markdown-content h3 {
   font-size: 1.6em;
   margin-top: 1em;
   margin-bottom: 0.6em;
 }
 
-#result h4,
-#result h5,
-#result h6 {
+#markdown-content h4,
+#markdown-content h5,
+#markdown-content h6 {
   margin-top: 0.8em;
   margin-bottom: 0.5em;
 }
 
-#result h4 {
+#markdown-content h4 {
   font-size: 1.4em;
 }
-#result h5 {
+#markdown-content h5 {
   font-size: 1.2em;
 }
-#result h6 {
+#markdown-content h6 {
   font-size: 1em;
 }
 
-#result pre {
+#markdown-content pre {
   background-color: #f8f8f880;
   border-radius: 6px;
   padding: 1em;
@@ -536,11 +419,11 @@ textarea:focus {
   overflow-x: auto;
 }
 
-#result strong {
+#markdown-content strong {
   color: var(--primary-color);
 }
 
-#result code {
+#markdown-content code {
   font-family: "JetBrains MONO", "Consolas", "Courier New", monospace;
   background-color: hsla(var(--primary-color-hsl), 0.08);
   color: var(--primary-color);
@@ -549,72 +432,72 @@ textarea:focus {
   font-size: 0.9em;
 }
 
-#result pre code {
+#markdown-content pre code {
   background-color: transparent;
   color: inherit;
   padding: 0;
   border-radius: 0;
-  white-space: normal;
+  white-space: pre-wrap;
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
 
-#result blockquote {
+#markdown-content blockquote {
   padding: 0.1em 1em;
   background-color: hsla(var(--primary-color-hsl), 0.08);
   border-left: 4px solid var(--primary-color);
   margin: auto;
 }
 
-#result table {
+#markdown-content table {
   border-collapse: collapse;
   margin: 1em auto;
   overflow: hidden;
   width: 100%;
 }
 
-#result table thead {
+#markdown-content table thead {
   background-color: #f2f2f2;
   font-weight: bold;
 }
 
-#result table th {
+#markdown-content table th {
   color: var(--text-color);
   font-weight: 600;
   padding: 0.75em 1em;
   text-align: left;
 }
 
-#result table td {
+#markdown-content table td {
   padding: 0.75em 1em;
   border-top: 1px solid #eee;
 }
 
-#result table tr:nth-child(2n) {
+#markdown-content table tr:nth-child(2n) {
   background-color: #fafafa;
 }
 
-#result table tr:hover {
+#markdown-content table tr:hover {
   background-color: #fafafa;
 }
 
-#result ul,
-#result ol {
+#markdown-content ul,
+#markdown-content ol {
   padding-left: 2em;
   margin: 0.5em 0;
 }
 
-#result li {
+#markdown-content li {
   margin: 0.3em 0;
 }
 
-#result hr {
+#markdown-content hr {
   border: none;
   border-top: 1px solid #eee;
   margin: 2em 0;
 }
 
-#result img {
+#markdown-content img {
   display: block;
   margin: 1em auto;
   max-width: 100%;

@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.7] - 2025-04-11
+
+### Added
+
+- A version bar on the top of the page, showing version histories.
+- A new feedback solution powered by Tally.
+- A button for changelog display.
+
+### Changed
+
+- Default analysis options descriptions.
+    - Add a line "# The options for analysis | 分析选项".
+    - Rewrite "Grouping histograms" as "Grouping charts" in en-us.
+- Display all 3 markdown contents (README, Changelog, analysis report) in the same container.
+    - It is now impossible to display docs (README, Changelog) while keeping the analysis report contents.
+- Rename "analyzer.js" to "analyze.js".
+
+### Removed
+
+- The SMTP feedback solution since it's too erroneous.
+- The modal element for displaying READMEs.
+
 ## [0.7.6] - 2025-04-09
 
 ### Changed

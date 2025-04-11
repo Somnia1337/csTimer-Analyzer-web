@@ -65,6 +65,5 @@ commented
 - feat:
     - i18n.
     - shows report half-blockingly (refreshes after analyzing a session).
-    - treat `StatsScale` 0 as "auto"
-- docs: add `changelog.md`.
-- test: add test modules
+    - treat `StatsScale` 0 as "auto".
+- test: add test modules.

@@ -4,12 +4,10 @@ import init, {
 } from "../pkg/cstimer_analyzer_web.js";
 
 async function run() {
-  document.body.classList.add("loading");
   await init();
   const optionsText = document.getElementById("options").value;
   const file2 = document.getElementById("file2").files[0];
   const markdownContent = document.getElementById("markdown-content");
-  const loader = document.getElementById("loader");
   const errorMessage = document.getElementById("error-message");
   const errorText = document.getElementById("error-text");
   const canvas = document.createElement("canvas");
@@ -25,7 +23,6 @@ async function run() {
     errorText.textContent = "Please enter analysis options.";
     errorMessage.classList.add("active");
     canvas.remove();
-    document.body.classList.remove("loading");
     return;
   }
 
@@ -33,16 +30,17 @@ async function run() {
     errorText.textContent = "Please select a csTimer data file.";
     errorMessage.classList.add("active");
     canvas.remove();
-    document.body.classList.remove("loading");
     return;
   }
 
-  loader.classList.add("active");
+  markdownContent.innerHTML = `<div class="loader active"><div class="loader-spinner"></div><p>Analyzing...</p></div>`;
 
   const encoder = new TextEncoder();
   const data1 = encoder.encode(optionsText);
 
   try {
+    document.body.classList.add("loading");
+
     const data2 = await file2.arrayBuffer();
 
     try {
@@ -53,18 +51,15 @@ async function run() {
       );
 
       markdownContent.innerHTML = render_markdown(result);
-      loader.classList.remove("active");
       markdownContent.scrollIntoView({ behavior: "smooth", block: "start" });
 
       canvas.remove();
     } catch (e) {
-      loader.classList.remove("active");
       errorText.textContent = "Analysis error: " + e.message;
       errorMessage.classList.add("active");
       canvas.remove();
     }
   } catch (e) {
-    loader.classList.remove("active");
     errorText.textContent = "File reading error: " + e.message;
     errorMessage.classList.add("active");
     canvas.remove();

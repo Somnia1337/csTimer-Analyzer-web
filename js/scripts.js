@@ -23,7 +23,6 @@ function initializeDocsButton(path, id, desc) {
       const docs = await response.text();
       await init();
       markdownContent.innerHTML = render_markdown(docs);
-      loader.classList.remove("active");
       markdownContent.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (error) {
       markdownContent.innerHTML = `<div class="error-message active">Error loading Changelog: ${error.message}</div>`;

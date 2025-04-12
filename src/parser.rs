@@ -42,7 +42,11 @@ pub fn parse_sessions(input: &str) -> Vec<Session> {
                     {
                         sessions.push(Session::from(
                             *rank,
-                            name.clone(),
+                            if name.is_empty() {
+                                rank.to_string()
+                            } else {
+                                name.clone()
+                            },
                             (date_time.0 + offset, date_time.1 + offset),
                             &records,
                         ));

@@ -3,6 +3,7 @@ import init, { render_markdown } from "../pkg/cstimer_analyzer_web.js";
 document.addEventListener("DOMContentLoaded", function () {
   initializeDocsButton("./README-ZH.md", "readme-button", "README");
   initializeDocsButton("./CHANGELOG.md", "changelog-button", "Changelog");
+  initializeGitHubButton();
   initializeExampleButton();
   initializeFileSelection();
 });
@@ -10,9 +11,11 @@ document.addEventListener("DOMContentLoaded", function () {
 function initializeDocsButton(path, id, desc) {
   const docsButton = document.getElementById(id);
   const markdownContent = document.getElementById("markdown-content");
+  const label = document.getElementById("file2-label");
 
   docsButton.addEventListener("click", async function () {
     try {
+      label.textContent = desc;
       markdownContent.innerHTML = `<div class="loader active"><div class="loader-spinner"></div><p>Loading ${desc}...</p></div>`;
 
       const response = await fetch(path);
@@ -30,21 +33,33 @@ function initializeDocsButton(path, id, desc) {
   });
 }
 
+function initializeGitHubButton() {
+  document
+    .getElementById("github-button")
+    .addEventListener("click", function () {
+      window.open(
+        "https://github.com/Somnia1337/csTimer-Analyzer-web",
+        "_blank"
+      );
+    });
+}
+
 function initializeExampleButton() {
   const useExampleButton = document.getElementById("use-example");
   useExampleButton.addEventListener("click", async function () {
-    const fileSelected = document.getElementById("file-selected");
-    const filenameDisplay = document.getElementById("filename-display");
     const label = document.getElementById("file2-label");
+    const buttonLabel = document.getElementById("use-example");
 
     try {
-      label.textContent = "Loading example file...";
+      buttonLabel.textContent = "Loading...";
 
       const response = await fetch("./example.txt");
 
       if (!response.ok) {
         throw new Error(`Failed to load example file: ${response.status}`);
       }
+
+      buttonLabel.textContent = "use example file";
 
       const text = await response.text();
       const blob = new Blob([text], { type: "text/plain" });
@@ -53,15 +68,13 @@ function initializeExampleButton() {
         type: "text/plain",
       });
 
+      label.textContent = file.name;
+
       const dataTransfer = new DataTransfer();
       dataTransfer.items.add(file);
 
       const fileInput = document.getElementById("file2");
       fileInput.files = dataTransfer.files;
-
-      filenameDisplay.textContent = "example.txt";
-      fileSelected.classList.add("active");
-      label.textContent = "Example file loaded";
 
       run();
     } catch (error) {
@@ -75,22 +88,32 @@ function initializeExampleButton() {
 }
 
 function initializeFileSelection() {
-  document.getElementById("file2").addEventListener("change", function (e) {
-    const file = e.target.files[0];
-    const fileSelected = document.getElementById("file-selected");
-    const filenameDisplay = document.getElementById("filename-display");
-    const label = document.getElementById("file2-label");
+  document
+    .getElementById("file2")
+    .addEventListener("change", async function (e) {
+      const file = e.target.files[0];
+      const label = document.getElementById("file2-label");
+      const errorMessage = document.getElementById("error-message");
+      const errorText = document.getElementById("error-text");
 
-    if (file) {
-      filenameDisplay.textContent = file.name;
-      fileSelected.classList.add("active");
-      label.textContent = "File selected";
-      run();
-    } else {
-      fileSelected.classList.remove("active");
-      label.textContent = "Select csTimer Data";
-    }
-  });
+      if (file) {
+        label.textContent = file.name;
+
+        const isTxt =
+          file.name.toLowerCase().endsWith(".txt") &&
+          file.type === "text/plain";
+
+        if (!isTxt) {
+          errorText.textContent = "Please choose a .txt file.";
+          errorMessage.classList.add("active");
+          return;
+        }
+
+        await run();
+      } else {
+        label.textContent = "Select csTimer Data";
+      }
+    });
 }
 
 window.run = async function () {

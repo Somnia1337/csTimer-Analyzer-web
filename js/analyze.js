@@ -58,6 +58,7 @@ async function run() {
       errorText.textContent = "Analysis error: " + e.message;
       errorMessage.classList.add("active");
       canvas.remove();
+      markdownContent.innerHTML = `<strong>Waiting for data file selection...</strong>`;
     }
   } catch (e) {
     errorText.textContent = "File reading error: " + e.message;
@@ -73,17 +74,12 @@ document.addEventListener("DOMContentLoaded", function () {
     .getElementById("file2")
     .addEventListener("change", async function (e) {
       const file = e.target.files[0];
-      const fileSelected = document.getElementById("file-selected");
-      const filenameDisplay = document.getElementById("filename-display");
       const label = document.getElementById("file2-label");
 
       if (file) {
-        filenameDisplay.textContent = file.name;
-        fileSelected.classList.add("active");
-        label.textContent = "File selected";
+        label.textContent = file.name;
         await run();
       } else {
-        fileSelected.classList.remove("active");
         label.textContent = "Select csTimer Data";
       }
     });

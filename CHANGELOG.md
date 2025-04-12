@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.8] - 2025-04-12
+
+### Changed
+
+- Update cargo deps.
+- Use a button element for GitHub link.
+- The selected file/docs name now displays in the file selection box element.
+- Optimize JS scripts.
+- Optimize CSS styles.
+
+### Removed
+
+- Current version display at the page title.
+- The `file-selected` element and related CSS styles.
+
+### Fixed
+
+- Session name displays as "\*\*\*\*" when the name is empty (now it falls back to `rank`).
+- Undesired behaviors when an invalid file is selected.
+
+### Documentation
+
+- Fix "upload" "上传" in READMEs since the user data literally never uploads.
+- Auto-format READMEs and `CHANGELOG.md`.
+
 ## [0.7.7] - 2025-04-11
 
 ### Added
@@ -15,10 +40,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - Default analysis options descriptions.
-    - Add a line "# The options for analysis | 分析选项".
-    - Rewrite "Grouping histograms" as "Grouping charts" in en-us.
+  - Add a line "# The options for analysis | 分析选项".
+  - Rewrite "Grouping histograms" as "Grouping charts" in en-us.
 - Display all 3 markdown contents (README, Changelog, analysis report) in the same container.
-    - It is now impossible to display docs (README, Changelog) while keeping the analysis report contents.
+  - It is now impossible to display docs (README, Changelog) while keeping the analysis report contents.
 - Rename "analyzer.js" to "analyze.js".
 
 ### Removed
@@ -90,15 +115,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Auto line-wrapping for `PBs` code block.
 - Various textual and visual tweaks.
 
-### Fixed
-
-- Duplicate analysis options not properly removed.
-- `Session::group` not respecting the specified `StatsType`.
-
 ### Changed
 
 - Rename and reorganize modules.
 - Move CSS styles into `style.css`.
+
+### Fixed
+
+- Duplicate analysis options not properly removed.
+- `Session::group` not respecting the specified `StatsType`.
 
 ### Documentation
 
@@ -110,10 +135,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - Rename (shortened) some analysis options.
-    - `Overview` is now `Summary`.
-    - `PbHistory` is now `PBs`.
-    - `Grouping` is now `Group`.
-    - `Trending` is now `Trend`.
+  - `Overview` is now `Summary`.
+  - `PbHistory` is now `PBs`.
+  - `Grouping` is now `Group`.
+  - `Trending` is now `Trend`.
 
 ### Fixed
 
@@ -180,13 +205,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [0.4.3] - 2025-03-30
 
-### Fixed
-
-- Asterisks in comments can lead to undesired parsing results.
-
 ### Changed
 
 - Update `favicon.ico`.
+
+### Fixed
+
+- Asterisks in comments can lead to undesired parsing results.
 
 ### Documentation
 
@@ -213,8 +238,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Links to docs and `example.txt`.
 - Headers in analysis report have wrong colors.
 - Undesired behaviors while analyzing.
-    - Cursor turns into a pointer.
-    - Web page is horizontally draggable.
+  - Cursor turns into a pointer.
+  - Web page is horizontally draggable.
 
 ### Documentation
 
@@ -249,15 +274,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [0.3.3] - 2025-03-23
 
-### Fixed
-
-- Parameters passed to image generating functions.
-- Link to `favicon.ico` in `index.html`.
-
 ### Removed
 
 - All functions and types that are useless in web.
 - `ObsidianFlavor` option since it's useless in web.
+
+### Fixed
+
+- Parameters passed to image generating functions.
+- Link to `favicon.ico` in `index.html`.
 
 ## [0.3.2] - 2025-03-22
 

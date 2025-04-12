@@ -19,7 +19,7 @@ Features:
 
 1. Go to [csTimer](https://www.cstimer.net/), click on the "EXPORT" button, then click "Export to file". A data file named `cstimer_YYYYMMDD_hhmmss.txt` should be downloaded.
 2. Open [csTimer-Analyzer-web](https://somnia1337.github.io/csTimer-Analyzer-web/), write your analysis options in the textarea, see below for configuration tutorials.
-3. Press the upload button and choose the data file you just downloaded, your browser should begin analyzing automatically and show the report afterwards.
+3. Press the file selection button and choose the data file you just downloaded, your browser should begin analyzing automatically and show the report afterwards.
 
 ### Analysis Options
 
@@ -63,7 +63,7 @@ commented
 ### Todo
 
 - feat:
-    - i18n.
-    - shows report half-blockingly (refreshes after analyzing a session).
-    - treat `StatsScale` 0 as "auto".
+  - i18n.
+  - shows report half-blockingly (refreshes after analyzing a session).
+  - treat `StatsScale` 0 as "auto".
 - test: add test modules.

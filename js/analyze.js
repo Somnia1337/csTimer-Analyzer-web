@@ -2,6 +2,7 @@ import init, {
   wasm_analyze,
   render_markdown,
 } from "../pkg/cstimer_analyzer_web.js";
+import { saveRenderedHTML } from "./db.js";
 
 async function run() {
   await init();
@@ -50,15 +51,18 @@ async function run() {
         canvas
       );
 
-      markdownContent.innerHTML = render_markdown(result);
+      const rendered = render_markdown(result);
+      markdownContent.innerHTML = rendered;
       markdownContent.scrollIntoView({ behavior: "smooth", block: "start" });
 
+      await saveRenderedHTML(rendered);
       canvas.remove();
     } catch (e) {
       errorText.textContent = "Analysis error: " + e.message;
       errorMessage.classList.add("active");
       canvas.remove();
       markdownContent.innerHTML = `<strong>Waiting for data file selection...</strong>`;
+      localStorage.removeItem("markdownInnerHTML");
     }
   } catch (e) {
     errorText.textContent = "File reading error: " + e.message;
@@ -78,9 +82,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (file) {
         label.textContent = file.name;
+        localStorage.setItem("fileLabel", label.textContent);
+
         await run();
       } else {
         label.textContent = "Select csTimer Data";
+        localStorage.setItem("fileLabel", label.textContent);
       }
     });
 });

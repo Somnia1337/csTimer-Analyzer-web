@@ -1,4 +1,5 @@
 import init, { render_markdown } from "../pkg/cstimer_analyzer_web.js";
+import { saveRenderedHTML, loadRenderedHTML } from "./db.js";
 
 document.addEventListener("DOMContentLoaded", function () {
   initializeDocsButton("./README-ZH.md", "readme-button", "README");
@@ -6,6 +7,9 @@ document.addEventListener("DOMContentLoaded", function () {
   initializeGitHubButton();
   initializeExampleButton();
   initializeFileSelection();
+  initializeOptionsTextarea();
+  initializeFileLabel();
+  initializeContentDB();
 });
 
 function initializeDocsButton(path, id, desc) {
@@ -16,6 +20,8 @@ function initializeDocsButton(path, id, desc) {
   docsButton.addEventListener("click", async function () {
     try {
       label.textContent = desc;
+      localStorage.setItem("fileLabel", label.textContent);
+
       markdownContent.innerHTML = `<div class="loader active"><div class="loader-spinner"></div><p>Loading ${desc}...</p></div>`;
 
       const response = await fetch(path);
@@ -25,8 +31,12 @@ function initializeDocsButton(path, id, desc) {
 
       const docs = await response.text();
       await init();
-      markdownContent.innerHTML = render_markdown(docs);
+
+      const rendered = render_markdown(docs);
+      markdownContent.innerHTML = rendered;
       markdownContent.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      await saveRenderedHTML(rendered);
     } catch (error) {
       markdownContent.innerHTML = `<div class="error-message active">Error loading Changelog: ${error.message}</div>`;
     }
@@ -69,6 +79,7 @@ function initializeExampleButton() {
       });
 
       label.textContent = file.name;
+      localStorage.setItem("fileLabel", label.textContent);
 
       const dataTransfer = new DataTransfer();
       dataTransfer.items.add(file);
@@ -83,6 +94,7 @@ function initializeExampleButton() {
       errorText.textContent = error.message;
       errorMessage.classList.add("active");
       label.textContent = "Error loading example";
+      localStorage.setItem("fileLabel", label.textContent);
     }
   });
 }
@@ -98,6 +110,7 @@ function initializeFileSelection() {
 
       if (file) {
         label.textContent = file.name;
+        localStorage.setItem("fileLabel", label.textContent);
 
         const isTxt =
           file.name.toLowerCase().endsWith(".txt") &&
@@ -112,10 +125,52 @@ function initializeFileSelection() {
         await run();
       } else {
         label.textContent = "Select csTimer Data";
+        localStorage.setItem("fileLabel", label.textContent);
       }
     });
 }
 
-window.run = async function () {
-  console.log("Waiting for WASM module to load...");
-};
+function initializeOptionsTextarea() {
+  const textarea = document.getElementById("options");
+  const STORAGE_KEY = "analysisOptions";
+  const resetButton = document.getElementById("reset-options");
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const savedContent = localStorage.getItem(STORAGE_KEY);
+    if (savedContent !== null) {
+      textarea.value = savedContent;
+    } else {
+      textarea.value = textarea.dataset.default;
+    }
+  });
+
+  textarea.addEventListener("input", () => {
+    localStorage.setItem(STORAGE_KEY, textarea.value);
+  });
+
+  resetButton.addEventListener("click", () => {
+    const defaultContent = textarea.dataset.default;
+    textarea.value = defaultContent;
+    localStorage.removeItem(STORAGE_KEY);
+  });
+}
+
+function initializeFileLabel() {
+  const label = document.getElementById("file2-label");
+  const savedLabel = localStorage.getItem("fileLabel");
+
+  if (savedLabel !== null) {
+    label.textContent = savedLabel;
+  }
+}
+
+function initializeContentDB() {
+  const markdownContent = document.getElementById("markdown-content");
+  loadRenderedHTML()
+    .then((savedHTML) => {
+      if (savedHTML) {
+        markdownContent.innerHTML = savedHTML;
+      }
+    })
+    .catch(console.error);
+}

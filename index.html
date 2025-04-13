@@ -77,15 +77,19 @@
 
       <div class="input-group">
         <div class="options-container">
-          <label class="option-label" for="options">
-            <i class="fas fa-cog"></i> Analysis Options
-          </label>
+          <div class="option-header">
+            <label class="option-label" for="options">
+              <i class="fas fa-cog"></i> Analysis Options
+            </label>
+            <button id="reset-options" class="example-button">
+              use default options
+            </button>
+          </div>
           <textarea
             id="options"
             placeholder="Enter your analysis options here..."
             rows="20"
-          >
-# The options for analysis | 分析选项
+            data-default="# The options for analysis | 分析选项
 
 # Comment starts with '#' | 注释以 '#' 开头
 
@@ -104,8 +108,8 @@ trend(ao12)
 trend(ao100)
 
 # Commented records | 有注释的记录
-commented</textarea
-          >
+commented"
+          ></textarea>
         </div>
 
         <div class="right-panel">
@@ -157,6 +161,7 @@ commented</textarea
 
     <script type="module" src="js/scripts.js" defer></script>
     <script type="module" src="js/analyze.js"></script>
+    <script type="module" src="js/db.js"></script>
     <script>
       var d = document,
         w = "https://tally.so/widgets/embed.js",

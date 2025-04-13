@@ -247,9 +247,10 @@ impl Session {
             .into_drawing_area();
         root.fill(&WHITE)?;
 
-        let margin = (interval.as_seconds() * SPACING_RATE * 100.0).min(2.0);
-        let x_spec = (t_min.as_seconds().max(margin) - margin)..(t_max.as_seconds() + margin);
-        let y_spec = 0u32..(count_max as f32 * (1.0 + SPACING_RATE)) as u32;
+        let x_margin = (interval.as_seconds() * SPACING_RATE * 100.0).min(2.0);
+        let y_margin = (count_max as f32 * SPACING_RATE).max(1.0) as u32;
+        let x_spec = (t_min.as_seconds().max(x_margin) - x_margin)..(t_max.as_seconds() + x_margin);
+        let y_spec = 0u32..count_max as u32 + y_margin;
         let mut chart = ChartBuilder::on(&root)
             .caption(desc, (MONOSPACE, CAPTION_FONT_SIZE).into_font())
             .margin(MARGIN)

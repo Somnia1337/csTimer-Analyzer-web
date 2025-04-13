@@ -1,0 +1,15 @@
+{
+  "name": "cstimer-analyzer-web",
+  "type": "module",
+  "version": "0.7.8",
+  "files": [
+    "cstimer_analyzer_web_bg.wasm",
+    "cstimer_analyzer_web.js",
+    "cstimer_analyzer_web.d.ts"
+  ],
+  "main": "cstimer_analyzer_web.js",
+  "types": "cstimer_analyzer_web.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

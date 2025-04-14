@@ -1,67 +1,113 @@
-const DB_NAME = "MarkdownContentCache";
-const DB_VERSION = 1;
-const STORE_NAME = "renderedHTML";
+import { CONFIG } from "./constants.js";
+import { AppError, ERROR_TYPES } from "./error-handler.js";
 
-function openDatabase() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+const { NAME, VERSION, STORE_NAME } = CONFIG.DB;
 
-    request.onerror = () => reject(request.error);
+const dbManager = (() => {
+  let dbInstance = null;
 
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
-      }
-    };
+  async function getConnection() {
+    if (dbInstance) return dbInstance;
 
-    request.onsuccess = () => resolve(request.result);
-  });
-}
+    try {
+      dbInstance = await new Promise((resolve, reject) => {
+        const request = indexedDB.open(NAME, VERSION);
 
-async function saveRenderedHTML(html) {
-  const db = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
+        request.onerror = () =>
+          reject(
+            new AppError(ERROR_TYPES.DATABASE, "connection", request.error)
+          );
+
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME);
+          }
+        };
+
+        request.onsuccess = () => resolve(request.result);
+      });
+
+      return dbInstance;
+    } catch (error) {
+      console.error("Database connection error:", error);
+      throw error;
+    }
+  }
+
+  return { getConnection };
+})();
+
+async function createTransaction(mode = "readonly") {
+  try {
+    const db = await dbManager.getConnection();
+    const tx = db.transaction(STORE_NAME, mode);
     const store = tx.objectStore(STORE_NAME);
-    store.put(html, "markdown");
 
-    tx.oncomplete = () => {
-      console.log("saved");
-      resolve();
-    };
-    tx.onerror = () => reject(tx.error);
-  });
+    return { tx, store };
+  } catch (error) {
+    throw new AppError(ERROR_TYPES.DATABASE, "transaction", error);
+  }
 }
 
-async function loadRenderedHTML() {
-  const db = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const store = tx.objectStore(STORE_NAME);
-    const request = store.get("markdown");
+export async function saveRenderedHTML(html) {
+  try {
+    const { tx, store } = await createTransaction("readwrite");
 
-    request.onsuccess = () => {
-      console.log("loaded");
-      resolve(request.result);
-    };
-    request.onerror = () => reject(request.error);
-  });
+    return new Promise((resolve, reject) => {
+      const request = store.put(html, CONFIG.DB.KEY);
+
+      request.onsuccess = () => resolve();
+
+      request.onerror = () =>
+        reject(new AppError(ERROR_TYPES.DATABASE, "save", request.error));
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () =>
+        reject(new AppError(ERROR_TYPES.DATABASE, "save", tx.error));
+    });
+  } catch (error) {
+    console.error("Save HTML error:", error);
+    throw error;
+  }
 }
 
-async function clearRenderedHTML() {
-  const db = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
-    store.delete("markdown");
+export async function loadRenderedHTML() {
+  try {
+    const { store } = await createTransaction("readonly");
 
-    tx.oncomplete = () => {
-      console.log("cleared");
-      resolve();
-    };
-    tx.onerror = () => reject(tx.error);
-  });
+    return new Promise((resolve, reject) => {
+      const request = store.get(CONFIG.DB.KEY);
+
+      request.onsuccess = () => resolve(request.result);
+
+      request.onerror = () =>
+        reject(new AppError(ERROR_TYPES.DATABASE, "load", request.error));
+    });
+  } catch (error) {
+    console.error("Load HTML error:", error);
+    throw error;
+  }
 }
 
-export { saveRenderedHTML, loadRenderedHTML, clearRenderedHTML };
+export async function clearRenderedHTML() {
+  try {
+    const { tx, store } = await createTransaction("readwrite");
+
+    return new Promise((resolve, reject) => {
+      const request = store.delete(CONFIG.DB.KEY);
+
+      request.onsuccess = () => resolve();
+
+      request.onerror = () =>
+        reject(new AppError(ERROR_TYPES.DATABASE, "clear", request.error));
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () =>
+        reject(new AppError(ERROR_TYPES.DATABASE, "clear", tx.error));
+    });
+  } catch (error) {
+    console.error("Clear HTML error:", error);
+    throw error;
+  }
+}

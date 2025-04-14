@@ -1,95 +1,47 @@
-import init, {
-  wasm_analyze,
-  render_markdown,
-} from "../pkg/cstimer_analyzer_web.js";
-import { saveRenderedHTML } from "./db.js";
+import init, { wasm_analyze } from "../pkg/cstimer_analyzer_web.js";
+import { sanitizeInput, validateFile } from "./ui-manager.js";
+import { AppError, ERROR_TYPES } from "./error-handler.js";
+import { CONFIG } from "./constants.js";
 
-async function run() {
-  await init();
-  const optionsText = document.getElementById("options").value;
-  const file2 = document.getElementById("file2").files[0];
-  const markdownContent = document.getElementById("markdown-content");
-  const errorMessage = document.getElementById("error-message");
-  const errorText = document.getElementById("error-text");
-  const canvas = document.createElement("canvas");
+let analysisCanvas;
 
-  canvas.style.display = "none";
-  canvas.width = 1920;
-  canvas.height = 1080;
-  document.body.appendChild(canvas);
-
-  errorMessage.classList.remove("active");
-
-  if (!optionsText) {
-    errorText.textContent = "Please enter analysis options.";
-    errorMessage.classList.add("active");
-    canvas.remove();
-    return;
+function getAnalysisCanvas() {
+  if (!analysisCanvas) {
+    analysisCanvas = document.createElement("canvas");
+    analysisCanvas.style.display = "none";
+    analysisCanvas.width = CONFIG.CANVAS.WIDTH;
+    analysisCanvas.height = CONFIG.CANVAS.HEIGHT;
+    document.body.appendChild(analysisCanvas);
   }
-
-  if (!file2) {
-    errorText.textContent = "Please select a csTimer data file.";
-    errorMessage.classList.add("active");
-    canvas.remove();
-    return;
-  }
-
-  markdownContent.innerHTML = `<div class="loader active"><div class="loader-spinner"></div><p>Analyzing...</p></div>`;
-
-  const encoder = new TextEncoder();
-  const data1 = encoder.encode(optionsText);
-
-  try {
-    document.body.classList.add("loading");
-
-    const data2 = await file2.arrayBuffer();
-
-    try {
-      const result = wasm_analyze(
-        new Uint8Array(data1),
-        new Uint8Array(data2),
-        canvas
-      );
-
-      const rendered = render_markdown(result);
-      markdownContent.innerHTML = rendered;
-      markdownContent.scrollIntoView({ behavior: "smooth", block: "start" });
-
-      await saveRenderedHTML(rendered);
-      canvas.remove();
-    } catch (e) {
-      errorText.textContent = "Analysis error: " + e.message;
-      errorMessage.classList.add("active");
-      canvas.remove();
-      markdownContent.innerHTML = `<strong>Waiting for data file selection...</strong>`;
-      localStorage.removeItem("markdownInnerHTML");
-    }
-  } catch (e) {
-    errorText.textContent = "File reading error: " + e.message;
-    errorMessage.classList.add("active");
-    canvas.remove();
-  } finally {
-    document.body.classList.remove("loading");
-  }
+  return analysisCanvas;
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-  document
-    .getElementById("file2")
-    .addEventListener("change", async function (e) {
-      const file = e.target.files[0];
-      const label = document.getElementById("file2-label");
+export async function analyzeTimerData(optionsText, file) {
+  try {
+    await init();
 
-      if (file) {
-        label.textContent = file.name;
-        localStorage.setItem("fileLabel", label.textContent);
+    const sanitizedOptions = sanitizeInput(optionsText);
+    validateFile(file);
 
-        await run();
-      } else {
-        label.textContent = "Select csTimer Data";
-        localStorage.setItem("fileLabel", label.textContent);
-      }
+    const encoder = new TextEncoder();
+    const optionsData = encoder.encode(sanitizedOptions);
+    const fileData = await file.arrayBuffer().catch((err) => {
+      throw new AppError(ERROR_TYPES.FILE, "readError", err);
     });
-});
 
-window.run = run;
+    const canvas = getAnalysisCanvas();
+    const analysisReport = wasm_analyze(
+      new Uint8Array(optionsData),
+      new Uint8Array(fileData),
+      canvas
+    );
+
+    return analysisReport;
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    } else {
+      throw new AppError(ERROR_TYPES.ANALYSIS, "default", error);
+    }
+  }
+}

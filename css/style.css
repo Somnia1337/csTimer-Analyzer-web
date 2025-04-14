@@ -421,7 +421,7 @@ textarea:focus {
   padding: 0.1em 1em;
   background-color: hsla(var(--primary-color-hsl), 0.08);
   border-left: 4px solid var(--primary-color);
-  margin: auto;
+  margin: 1em auto;
 }
 
 #markdown-content table {

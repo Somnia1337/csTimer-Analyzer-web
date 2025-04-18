@@ -92,9 +92,7 @@ h2 {
   position: relative;
 }
 
-.readme-button,
-.changelog-button,
-.github-link {
+.header-button {
   background: none;
   border: none;
   cursor: pointer;
@@ -105,9 +103,7 @@ h2 {
   padding: 0;
 }
 
-.readme-button:hover,
-.changelog-button:hover,
-.github-link:hover {
+.header-button:hover {
   color: var(--accent-color);
 }
 
@@ -334,6 +330,33 @@ textarea:focus {
   border-radius: 50%;
   border-top-color: var(--primary-color);
   animation: spin 1s ease-in-out infinite;
+}
+
+.back-to-top {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  border: none;
+}
+
+.back-to-top:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.back-to-top.visible {
+  opacity: 1;
 }
 
 /* Results styling */

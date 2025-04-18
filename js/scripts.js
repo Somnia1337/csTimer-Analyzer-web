@@ -14,6 +14,10 @@ function initializeElements() {
     markdownContent: document.getElementById("markdown-content"),
     errorMessage: document.getElementById("error-message"),
     errorText: document.getElementById("error-text"),
+    githubButton: document.getElementById("github-button"),
+    useExampleButton: document.getElementById("use-example"),
+    resetButton: document.getElementById("reset-options"),
+    backToTopButton: document.getElementById("back-to-top"),
     label: document.getElementById("file2-label"),
   };
 }
@@ -21,12 +25,14 @@ function initializeElements() {
 document.addEventListener("DOMContentLoaded", function () {
   initializeElements();
   initializeDocsButton("./README-ZH.md", "readme-button", "README");
-  initializeDocsButton("./CHANGELOG.md", "changelog-button", "Changelog");
+  initializeDocsButton("./docs/CHANGELOG.md", "changelog-button", "Changelog");
+  initializeDocsButton("./docs/feedback.md", "feedback-button", "Feedback");
   initializeGitHubButton();
   initializeExampleButton();
   initializeFileSelection();
   initializeOptionsTextarea();
   initializeFileLabel();
+  initializeBackToTopButton();
   initializeContentDB();
 });
 
@@ -63,23 +69,15 @@ function initializeDocsButton(path, id, desc) {
 }
 
 function initializeGitHubButton() {
-  document
-    .getElementById("github-button")
-    .addEventListener("click", function () {
-      window.open(
-        "https://github.com/Somnia1337/csTimer-Analyzer-web",
-        "_blank"
-      );
-    });
+  elements.githubButton.addEventListener("click", function () {
+    window.open("https://github.com/Somnia1337/csTimer-Analyzer-web", "_blank");
+  });
 }
 
 function initializeExampleButton() {
-  const useExampleButton = document.getElementById("use-example");
-  useExampleButton.addEventListener("click", async function () {
-    const buttonLabel = document.getElementById("use-example");
-
+  elements.useExampleButton.addEventListener("click", async function () {
     try {
-      buttonLabel.textContent = "Loading...";
+      elements.useExampleButton.textContent = "Loading...";
 
       const response = await fetch("./example.txt");
       if (!response.ok) {
@@ -90,7 +88,7 @@ function initializeExampleButton() {
         );
       }
 
-      buttonLabel.textContent = "use example file";
+      elements.useExampleButton.textContent = "use example file";
 
       const text = await response.text();
       const blob = new Blob([text], { type: "text/plain" });
@@ -121,31 +119,33 @@ function initializeExampleButton() {
 }
 
 function initializeFileSelection() {
-  document
-    .getElementById("file2")
-    .addEventListener("change", async function (e) {
-      const file = e.target.files[0];
+  elements.fileInput.addEventListener("click", function () {
+    this.value = "";
+  });
 
-      if (file) {
-        try {
-          validateFile(file);
-          elements.label.textContent = file.name;
-          localStorage.setItem(
-            CONFIG.STORAGE.FILE_LABEL_KEY,
-            elements.label.textContent
-          );
-          await run();
-        } catch (error) {
-          handleError(error, elements);
-        }
-      } else {
-        elements.label.textContent = CONFIG.UI.DEFAULT_LABEL;
+  elements.fileInput.addEventListener("change", async function (e) {
+    const file = e.target.files[0];
+
+    if (file) {
+      try {
+        validateFile(file);
+        elements.label.textContent = file.name;
         localStorage.setItem(
           CONFIG.STORAGE.FILE_LABEL_KEY,
           elements.label.textContent
         );
+        await run();
+      } catch (error) {
+        handleError(error, elements);
       }
-    });
+    } else {
+      elements.label.textContent = CONFIG.UI.DEFAULT_LABEL;
+      localStorage.setItem(
+        CONFIG.STORAGE.FILE_LABEL_KEY,
+        elements.label.textContent
+      );
+    }
+  });
 }
 
 function debounce(fn, delay = 1000) {
@@ -157,8 +157,6 @@ function debounce(fn, delay = 1000) {
 }
 
 function initializeOptionsTextarea() {
-  const resetButton = document.getElementById("reset-options");
-
   window.addEventListener("DOMContentLoaded", () => {
     const savedContent = localStorage.getItem(CONFIG.STORAGE.OPTIONS_KEY);
     if (savedContent !== null) {
@@ -178,10 +176,33 @@ function initializeOptionsTextarea() {
     }, 3000)
   );
 
-  resetButton.addEventListener("click", () => {
+  elements.resetButton.addEventListener("click", () => {
     const defaultContent = elements.optionsText.dataset.default;
     elements.optionsText.value = defaultContent;
     localStorage.removeItem(CONFIG.STORAGE.OPTIONS_KEY);
+  });
+}
+
+function initializeBackToTopButton() {
+  const scrollThreshold = 1600;
+
+  function toggleBackToTopButton() {
+    if (window.scrollY > scrollThreshold) {
+      elements.backToTopButton.classList.add("visible");
+    } else {
+      elements.backToTopButton.classList.remove("visible");
+    }
+  }
+
+  toggleBackToTopButton(); // Initial check on load
+
+  window.addEventListener("scroll", toggleBackToTopButton);
+
+  elements.backToTopButton.addEventListener("click", function () {
+    elements.markdownContent.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   });
 }
 

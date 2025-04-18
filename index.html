@@ -56,18 +56,18 @@
             <i class="fas fa-info-circle"></i>
           </button>
           <button
-            id="changelog-button"
-            class="header-button"
-            aria-label="Show changelog"
-          >
-            <i class="fas fa-history"></i>
-          </button>
-          <button
             id="feedback-button"
             class="header-button"
             aria-label="Show feedback"
           >
             <i class="fas fa-paper-plane"></i>
+          </button>
+          <button
+            id="changelog-button"
+            class="header-button"
+            aria-label="Show changelog"
+          >
+            <i class="fas fa-history"></i>
           </button>
           <button
             id="github-button"
@@ -167,9 +167,17 @@ commented"
       </div>
     </div>
 
-    <button class="back-to-top" id="back-to-top" aria-label="Back to top">
-      <i class="fas fa-arrow-up"></i>
-    </button>
+    <div id="toc-navigator" class="toc-navigator">
+      <div class="toc-header">
+        <span id="navigator-header">Outline</span>
+        <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+          <i class="fas fa-arrow-up"></i>
+        </button>
+      </div>
+      <div class="toc-content">
+        <ul id="toc-list"></ul>
+      </div>
+    </div>
 
     <script type="module" src="js/index.js"></script>
     <script>

@@ -2,6 +2,7 @@ export const CONFIG = {
   STORAGE: {
     OPTIONS_KEY: "analysisOptions",
     FILE_LABEL_KEY: "fileLabel",
+    NAV_HEADER_KEY: "navheader",
     MARKDOWN_KEY: "markdownInnerHTML",
   },
   CANVAS: {

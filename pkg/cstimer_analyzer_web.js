@@ -166,6 +166,18 @@ function debugString(val) {
     // TODO we could test for more things here, like `Set`s and `Map`s.
     return className;
 }
+/**
+ * Converts the markdown content to HTML, a
+ * more time-efficient equivalent to marked.js.
+ * @param {string} input
+ * @returns {any}
+ */
+export function render_markdown(input) {
+    const ptr0 = passStringToWasm0(input, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.render_markdown(ptr0, len0);
+    return ret;
+}
 
 function passArray8ToWasm0(arg, malloc) {
     const ptr = malloc(arg.length * 1, 1) >>> 0;
@@ -180,19 +192,28 @@ function takeFromExternrefTable0(idx) {
     return value;
 }
 /**
- * The entrance function of WASM, analyzes
- * a csTimer data file with the specified options.
+ * Initializes the analysis, parses options and sessions.
  * @param {Uint8Array} options_txt
  * @param {Uint8Array} data_txt
  * @param {HTMLCanvasElement} canvas
- * @returns {any}
  */
-export function wasm_analyze(options_txt, data_txt, canvas) {
+export function init_analysis(options_txt, data_txt, canvas) {
     const ptr0 = passArray8ToWasm0(options_txt, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     const ptr1 = passArray8ToWasm0(data_txt, wasm.__wbindgen_malloc);
     const len1 = WASM_VECTOR_LEN;
-    const ret = wasm.wasm_analyze(ptr0, len0, ptr1, len1, canvas);
+    const ret = wasm.init_analysis(ptr0, len0, ptr1, len1, canvas);
+    if (ret[1]) {
+        throw takeFromExternrefTable0(ret[0]);
+    }
+}
+
+/**
+ * Provides information about the dataset and parsed options.
+ * @returns {any}
+ */
+export function analysis_info() {
+    const ret = wasm.analysis_info();
     if (ret[2]) {
         throw takeFromExternrefTable0(ret[1]);
     }
@@ -200,16 +221,37 @@ export function wasm_analyze(options_txt, data_txt, canvas) {
 }
 
 /**
- * Converts the markdown content to HTML, a
- * more time-efficient equivalent to marked.js.
- * @param {string} input
+ * Provides number of sessions to be analyzed.
+ * @returns {number}
+ */
+export function get_session_count() {
+    const ret = wasm.get_session_count();
+    return ret >>> 0;
+}
+
+/**
+ * Provides the analysis for the session specified by JS.
+ * @param {number} index
  * @returns {any}
  */
-export function render_markdown(input) {
-    const ptr0 = passStringToWasm0(input, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.render_markdown(ptr0, len0);
-    return ret;
+export function analyze_session(index) {
+    const ret = wasm.analyze_session(index);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return takeFromExternrefTable0(ret[0]);
+}
+
+/**
+ * Provides debug information about analysis timings.
+ * @returns {any}
+ */
+export function get_timings() {
+    const ret = wasm.get_timings();
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return takeFromExternrefTable0(ret[0]);
 }
 
 async function __wbg_load(module, imports) {

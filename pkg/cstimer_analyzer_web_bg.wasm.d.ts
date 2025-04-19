@@ -1,8 +1,12 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
-export const wasm_analyze: (a: number, b: number, c: number, d: number, e: any) => [number, number, number];
 export const render_markdown: (a: number, b: number) => any;
+export const init_analysis: (a: number, b: number, c: number, d: number, e: any) => [number, number];
+export const analysis_info: () => [number, number, number];
+export const get_session_count: () => number;
+export const analyze_session: (a: number) => [number, number, number];
+export const get_timings: () => [number, number, number];
 export const __wbindgen_exn_store: (a: number) => void;
 export const __externref_table_alloc: () => number;
 export const __wbindgen_export_2: WebAssembly.Table;

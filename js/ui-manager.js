@@ -1,16 +1,5 @@
 import { CONFIG } from "./constants.js";
-import { AppError, ERROR_TYPES, handleError } from "./error-handler.js";
-
-export const loadingManager = {
-  start(elements, message = "Loading...") {
-    document.body.classList.add("loading");
-    elements.markdownContent.innerHTML = `<div class="loader active"><div class="loader-spinner"></div><p>${message}</p></div>`;
-  },
-
-  end() {
-    document.body.classList.remove("loading");
-  },
-};
+import { AppError, ERROR_TYPES } from "./error-handler.js";
 
 export function validateFile(file) {
   if (!file) {

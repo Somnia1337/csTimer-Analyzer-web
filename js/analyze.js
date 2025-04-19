@@ -1,7 +1,13 @@
-import init, { wasm_analyze } from "../pkg/cstimer_analyzer_web.js";
-import { sanitizeInput, validateFile } from "./ui-manager.js";
-import { AppError, ERROR_TYPES } from "./error-handler.js";
+import init, {
+  init_analysis,
+  analysis_info,
+  get_session_count,
+  analyze_session,
+  get_timings,
+} from "../pkg/cstimer_analyzer_web.js";
+import { sanitizeInput } from "./ui-manager.js";
 import { CONFIG } from "./constants.js";
+import { renderMarkdown } from "./scripts.js";
 
 let analysisCanvas;
 
@@ -17,31 +23,51 @@ function getAnalysisCanvas() {
 }
 
 export async function analyzeTimerData(optionsText, file) {
-  try {
-    await init();
+  await init();
 
-    const sanitizedOptions = sanitizeInput(optionsText);
-    validateFile(file);
+  const encoder = new TextEncoder();
+  const optionsData = encoder.encode(sanitizeInput(optionsText));
+  const fileData = await file.arrayBuffer();
 
-    const encoder = new TextEncoder();
-    const optionsData = encoder.encode(sanitizedOptions);
-    const fileData = await file.arrayBuffer().catch((err) => {
-      throw new AppError(ERROR_TYPES.FILE, "readError", err);
+  await init_analysis(
+    new Uint8Array(optionsData),
+    new Uint8Array(fileData),
+    getAnalysisCanvas()
+  );
+
+  const chunks = [];
+  const markdownContent = document.getElementById("markdown-content");
+
+  const infoChunk = await analysis_info();
+  chunks.push(infoChunk);
+  await renderMarkdown(infoChunk);
+
+  if (infoChunk.includes("Analysis aborted")) {
+    markdownContent.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
     });
 
-    const canvas = getAnalysisCanvas();
-    const analysisReport = wasm_analyze(
-      new Uint8Array(optionsData),
-      new Uint8Array(fileData),
-      canvas
-    );
+    return;
+  }
 
-    return analysisReport;
-  } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
-    } else {
-      throw new AppError(ERROR_TYPES.ANALYSIS, "default", error);
+  const sessionCount = get_session_count();
+
+  for (let i = 0; i < sessionCount; i++) {
+    const sessionChunk = analyze_session(i);
+    chunks.push(sessionChunk);
+    await renderMarkdown(sessionChunk);
+    await new Promise((r) => requestAnimationFrame(r));
+
+    if (i == 0) {
+      markdownContent.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }
   }
+
+  const timingsChunk = get_timings();
+  chunks.push(timingsChunk);
+  await renderMarkdown(timingsChunk);
 }

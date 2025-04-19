@@ -34,7 +34,7 @@ fn append_heading<W: Write>(writer: &mut W, level: usize, title: &str) -> io::Re
 }
 
 /// Appends information about the dataset and parsed options.
-fn append_analysis_info<W: Write>(
+pub fn append_analysis_info<W: Write>(
     writer: &mut W,
     sessions: &[Session],
     options: &[AnalysisOption],
@@ -184,7 +184,7 @@ fn append_image_data_url<W: Write>(
 }
 
 /// Appends debug information about analysis timings.
-fn append_timings<W: Write>(
+pub fn append_timings<W: Write>(
     writer: &mut W,
     parsing_time: Duration,
     timings: &[(usize, Duration)],
@@ -330,53 +330,32 @@ fn append_section<W: Write>(
     }
 }
 
-/// Analyzes each session with parsed options.
-pub fn analyze<W: Write>(
-    sessions: &[Session],
+/// Analyzes a single session with parsed options.
+pub fn analyze_single_session<W: Write>(
+    session: &Session,
     options: &[AnalysisOption],
     writer: &mut W,
     canvas: &HtmlCanvasElement,
-    parsing_time: Duration,
-) -> io::Result<()> {
-    let analysis_timer = Instant::now();
+) -> io::Result<Duration> {
+    let session_timer = Instant::now();
 
-    let empty = append_analysis_info(writer, sessions, options)?;
-    if empty {
-        return Ok(());
-    }
+    let session_heading = format!(
+        "<a id=\"session{}\">[#{}] **{}** (`{}` records)</a>",
+        session.rank(),
+        session.rank(),
+        session.name(),
+        session.record_count(),
+    );
+    append_heading(writer, 3, &session_heading)?;
+    append_session_date_time(writer, session)?;
 
-    let mut session_times = Vec::with_capacity(sessions.len());
-
-    for session in sessions {
-        let session_timer = Instant::now();
-
-        let session_heading = format!(
-            "<a id=\"session{}\">[#{}] **{}** (`{}` records)</a>",
-            session.rank(),
-            session.rank(),
-            session.name(),
-            session.record_count(),
-        );
-        append_heading(writer, 3, &session_heading)?;
-        append_session_date_time(writer, session)?;
-
-        if session.records_not_dnf().is_empty() {
-            append_message(writer, "Info", "Every record is DNF.")?;
-        } else {
-            for a_type in options {
-                append_section(writer, session, a_type, canvas)?;
-            }
+    if session.records_not_dnf().is_empty() {
+        append_message(writer, "Info", "Every record is DNF.")?;
+    } else {
+        for a_type in options {
+            append_section(writer, session, a_type, canvas)?;
         }
-
-        session_times.push((session.rank(), session_timer.elapsed()));
     }
 
-    append_timings(
-        writer,
-        parsing_time,
-        &session_times,
-        analysis_timer.elapsed(),
-    )?;
-
-    Ok(())
+    Ok(session_timer.elapsed())
 }

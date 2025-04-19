@@ -2,7 +2,7 @@ import init, { render_markdown } from "../pkg/cstimer_analyzer_web.js";
 import { CONFIG } from "./constants.js";
 import { saveRenderedHTML, loadRenderedHTML } from "./db.js";
 import { analyzeTimerData } from "./analyze.js";
-import { loadingManager, validateFile } from "./ui-manager.js";
+import { validateFile } from "./ui-manager.js";
 import { AppError, ERROR_TYPES, handleError } from "./error-handler.js";
 
 let elements;
@@ -50,7 +50,7 @@ function initializeDocsButton(path, id, desc) {
         elements.label.textContent
       );
 
-      loadingManager.start(elements, `Loading ${desc}...`);
+      elements.markdownContent.innerHTML = "";
 
       const response = await fetch(path);
       if (!response.ok) {
@@ -63,6 +63,7 @@ function initializeDocsButton(path, id, desc) {
 
       const docs = await response.text();
       await renderMarkdown(docs);
+      saveRenderedHTML(elements.markdownContent.innerHTML);
 
       elements.navHeader.textContent = desc;
       localStorage.setItem(
@@ -71,8 +72,6 @@ function initializeDocsButton(path, id, desc) {
       );
     } catch (error) {
       handleError(error, elements);
-    } finally {
-      loadingManager.end();
     }
   });
 }
@@ -352,13 +351,11 @@ async function renderMarkdown(markdown) {
   try {
     await init();
     const rendered = render_markdown(markdown);
-    elements.markdownContent.innerHTML = rendered;
-    elements.markdownContent.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-    await saveRenderedHTML(rendered);
-    return rendered;
+    const temp = document.createElement("div");
+    temp.innerHTML = rendered;
+    while (temp.firstChild) {
+      elements.markdownContent.appendChild(temp.firstChild);
+    }
   } catch (error) {
     throw new AppError(ERROR_TYPES.ANALYSIS, "render", error);
   }
@@ -371,19 +368,16 @@ async function run() {
     const optionsText = elements.optionsText.value;
     const file = elements.fileInput.files[0];
 
-    loadingManager.start(elements, "Analyzing...");
+    elements.markdownContent.innerHTML = "";
 
-    const analysisReport = await analyzeTimerData(optionsText, file);
-
-    await renderMarkdown(analysisReport);
+    await analyzeTimerData(optionsText, file);
+    await saveRenderedHTML(elements.markdownContent.innerHTML);
   } catch (error) {
     handleError(error, elements);
 
     if (error instanceof AppError && error.type === ERROR_TYPES.VALIDATION) {
       elements.markdownContent.innerHTML = `<strong>Waiting for data file selection...</strong>`;
     }
-  } finally {
-    loadingManager.end();
   }
 }
 

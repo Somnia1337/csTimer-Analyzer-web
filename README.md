@@ -64,6 +64,5 @@ commented
 
 - feat:
   - i18n.
-  - shows report half-blockingly (refreshes after analyzing a session).
   - treat `StatsScale` 0 as "auto".
 - test: add test modules.

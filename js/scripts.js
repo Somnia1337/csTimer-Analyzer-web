@@ -63,13 +63,19 @@ function initializeDocsButton(path, id, desc) {
 
       const docs = await response.text();
       await renderMarkdown(docs);
-      saveRenderedHTML(elements.markdownContent.innerHTML);
 
       elements.navHeader.textContent = desc;
       localStorage.setItem(
         CONFIG.STORAGE.NAV_HEADER_KEY,
         elements.navHeader.textContent
       );
+
+      elements.markdownContent.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+
+      saveRenderedHTML(elements.markdownContent.innerHTML);
     } catch (error) {
       handleError(error, elements);
     }
@@ -232,7 +238,13 @@ function initializeNavigator() {
     tocNavigator.innerHTML = `
       <div id="toc-navigator" class="toc-navigator">
         <div class="toc-header">
-          <span>Navigator</span>
+          <button id="toggle-toc" class="toggle-toc" aria-label="Toggle navigator">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+          <span id="navigator-header">Outline</span>
+          <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+            <i class="fas fa-arrow-up"></i>
+          </button>
         </div>
         <div class="toc-content">
           <ul id="toc-list"></ul>
@@ -245,10 +257,22 @@ function initializeNavigator() {
   const tocNavigator = document.getElementById("toc-navigator");
   const tocList = document.getElementById("toc-list");
   const markdownContent = document.getElementById("markdown-content");
+  const toggleButton = document.getElementById("toggle-toc");
+
+  toggleButton.addEventListener("click", function () {
+    tocNavigator.classList.toggle("collapsed");
+    localStorage.setItem(
+      "tocCollapsed",
+      tocNavigator.classList.contains("collapsed")
+    );
+  });
+
+  if (localStorage.getItem("tocCollapsed") === "true") {
+    tocNavigator.classList.add("collapsed");
+  }
 
   function generateTOC() {
     const target = markdownContent.querySelector("h1") ? "h2" : "h3";
-
     const headings = markdownContent.querySelectorAll(target);
 
     if (headings.length === 0) {

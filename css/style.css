@@ -296,7 +296,7 @@ textarea:focus {
   background-color: var(--accent-color);
 }
 
-/* Error and loader styles */
+/* Error styles */
 .error-message {
   padding: 1rem;
   background-color: #ffebee;
@@ -312,26 +312,7 @@ textarea:focus {
   display: block;
 }
 
-.loader {
-  display: none;
-  text-align: center;
-  padding: 1rem 0;
-}
-
-.loader.active {
-  display: block;
-}
-
-.loader-spinner {
-  display: inline-block;
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(63, 81, 181, 0.1);
-  border-radius: 50%;
-  border-top-color: var(--primary-color);
-  animation: spin 1s ease-in-out infinite;
-}
-
+/* Navigator styles */
 .toc-navigator {
   position: fixed;
   right: 0;
@@ -358,6 +339,10 @@ textarea:focus {
   opacity: 1;
 }
 
+.toc-navigator.collapsed {
+  transform: translateY(-50%) translateX(calc(100% - 40px));
+}
+
 .toc-header {
   padding: 12px;
   background-color: hsla(var(--primary-color-hsl), 0.5);
@@ -367,6 +352,41 @@ textarea:focus {
   align-items: center;
   font-weight: bold;
   border-bottom: 1px solid #dee2e6;
+}
+
+.toggle-toc,
+.back-to-top {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  margin-right: 10px;
+  color: #212529;
+  transition: opacity 0.3s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.toggle-toc:hover,
+.back-to-top:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.back-to-top {
+  opacity: 0;
+}
+
+.back-to-top.visible {
+  opacity: 1;
+}
+
+.toc-navigator.collapsed .toggle-toc i {
+  transform: rotate(180deg);
 }
 
 .toc-content {
@@ -409,31 +429,7 @@ textarea:focus {
   font-weight: bold;
 }
 
-.back-to-top {
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  z-index: 1000;
-  opacity: 0;
-  transition: opacity 0.3s ease-in-out;
-  border: none;
-}
-
-.back-to-top:hover {
-  background-color: rgba(0, 0, 0, 0.7);
-}
-
-.back-to-top.visible {
-  opacity: 1;
-}
-
-/* Results styling */
+/* Markdown styles */
 #markdown-content {
   margin-top: 2rem;
   padding: 2rem;

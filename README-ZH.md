@@ -56,8 +56,7 @@ group(single, 500) # 500ms
 trend(ao12)
 trend(ao100)
 
-### ✨ NEW ✨ ###
-# 最近记录
+# ✨ NEW ✨ 最近记录
 recent(200)                    # 200 次复原
 recent(10%)                    # 10% 的复原
 recent(2025-01-01)             # 起始日期

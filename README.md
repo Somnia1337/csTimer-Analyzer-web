@@ -56,8 +56,7 @@ group(single, 500) # 500ms
 trend(ao12)
 trend(ao100)
 
-### ✨ NEW ✨ ###
-# Recent solves
+# ✨ NEW ✨ Recent solves
 recent(200)                    # 200 solves
 recent(10%)                    # 10% solves
 recent(2025-01-01)             # start date

@@ -1,6 +1,6 @@
 export const CONFIG = {
   STORAGE: {
-    OPTIONS_KEY: "analysisOptions",
+    OPTIONS_KEY: "analysisOptionsv0.10.0",
     FILE_LABEL_KEY: "fileLabel",
     NAV_HEADER_KEY: "navheader",
     MARKDOWN_KEY: "markdownInnerHTML",

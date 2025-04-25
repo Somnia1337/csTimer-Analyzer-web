@@ -7,7 +7,7 @@ All user feedbacks, interpretation and completion status will be documented in t
 ### 📝 Planned
 
 ```
-#1 #2 #3
+#3
 ```
 
 ### ✅ Implemented

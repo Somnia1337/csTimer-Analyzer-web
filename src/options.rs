@@ -3,6 +3,8 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::num::ParseIntError;
 
+use chrono::NaiveDate;
+
 use crate::time::{AsSeconds, Milliseconds};
 
 /// The scale of statistics.
@@ -110,6 +112,108 @@ impl fmt::Display for ParseStatsTypeError {
     }
 }
 
+pub enum ParseTargetRangeError {
+    InvalidFormat,
+    InvalidNumber,
+    InvalidPercentage,
+    InvalidDateCount,
+    InvalidDateFormat(chrono::ParseError),
+    InvalidDateRange,
+}
+
+impl fmt::Display for ParseTargetRangeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidFormat => write!(f, "invalid target range format"),
+            Self::InvalidNumber => write!(f, "expected a number greater than 0"),
+            Self::InvalidPercentage => write!(f, "percentage must be in range 1 to 99"),
+            Self::InvalidDateCount => write!(f, "expected 1 date or 2 dates"),
+            Self::InvalidDateFormat(e) => write!(f, "invalid date format: {}", e),
+            Self::InvalidDateRange => write!(f, "the start date must be earlier than the end date"),
+        }
+    }
+}
+
+impl From<chrono::ParseError> for ParseTargetRangeError {
+    fn from(err: chrono::ParseError) -> Self {
+        Self::InvalidDateFormat(err)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum TargetRange {
+    /// Count of solves, must be > 0.
+    SolvesCount(usize),
+
+    /// Percentage in [1, 99].
+    Percentage(u8),
+
+    /// Start from specific date.
+    DateRange(NaiveDate, Option<NaiveDate>),
+}
+
+impl fmt::Display for TargetRange {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::SolvesCount(count) => write!(f, "{}", count),
+            Self::Percentage(pct) => write!(f, "{}%", pct),
+            Self::DateRange(start, end) => write!(
+                f,
+                "{} ~ {}",
+                start.format("%Y-%m-%d"),
+                match end {
+                    Some(end) => end.format("%Y-%m-%d").to_string(),
+                    None => String::from("now"),
+                },
+            ),
+        }
+    }
+}
+
+impl TryFrom<&str> for TargetRange {
+    type Error = ParseTargetRangeError;
+
+    fn try_from(input: &str) -> Result<Self, Self::Error> {
+        let input = input.trim();
+
+        if let Some(stripped) = input.strip_suffix('%') {
+            let pct = stripped
+                .parse::<u8>()
+                .map_err(|_| ParseTargetRangeError::InvalidNumber)?;
+            return if (1..=99).contains(&pct) {
+                Ok(Self::Percentage(pct))
+            } else {
+                Err(ParseTargetRangeError::InvalidPercentage)
+            };
+        }
+
+        if let Ok(count) = input.parse::<usize>() {
+            return if count >= 1 {
+                Ok(Self::SolvesCount(count))
+            } else {
+                Err(ParseTargetRangeError::InvalidNumber)
+            };
+        }
+
+        let dates: Vec<&str> = input.split(',').map(|s| s.trim()).collect();
+
+        let start = NaiveDate::parse_from_str(dates[0], "%Y-%m-%d")?;
+        if dates.len() == 1 {
+            Ok(Self::DateRange(start, None))
+        } else if dates.len() == 2 {
+            let end = NaiveDate::parse_from_str(dates[1], "%Y-%m-%d")?;
+
+            if start > end {
+                Err(ParseTargetRangeError::InvalidDateRange)
+            } else {
+                Ok(Self::DateRange(start, Some(end)))
+            }
+        } else {
+            Err(ParseTargetRangeError::InvalidDateCount)
+        }
+    }
+}
+
 /// Option of a single analysis.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AnalysisOption {
@@ -126,6 +230,10 @@ pub enum AnalysisOption {
     /// Trends of solve times of some stats type.
     Trend(StatsType),
 
+    /// Some recent solves specified by a number,
+    /// percentage or a range of days.
+    Recent(TargetRange),
+
     /// `Record`s that has a non-empty comment.
     Commented,
 }
@@ -139,6 +247,7 @@ impl fmt::Display for AnalysisOption {
                 format!("Group(**{}**, by {}s)", s_type, interval.as_seconds())
             }
             Self::Trend(s_type) => format!("Trend(**{}**)", s_type),
+            Self::Recent(range) => format!("Recent(**{}**)", range),
             Self::Commented => String::from("Commented"),
         };
 
@@ -184,6 +293,14 @@ impl TryFrom<&str> for AnalysisOption {
             }
         }
 
+        if let Some(inner) = value.strip_prefix("recent(") {
+            if let Some(inner) = inner.strip_suffix(")") {
+                let range = TargetRange::try_from(inner)
+                    .map_err(ParseAnalysisOptionError::InvalidTarget)?;
+                return Ok(Self::Recent(range));
+            }
+        }
+
         if value == "commented" {
             return Ok(Self::Commented);
         }
@@ -210,6 +327,9 @@ pub enum ParseAnalysisOptionError {
 
     /// Parsing stats type failed.
     InvalidStats(ParseStatsTypeError),
+
+    /// Parsing target range failed.
+    InvalidTarget(ParseTargetRangeError),
 }
 
 impl From<ParseStatsTypeError> for ParseAnalysisOptionError {
@@ -220,11 +340,10 @@ impl From<ParseStatsTypeError> for ParseAnalysisOptionError {
 
 impl fmt::Display for ParseAnalysisOptionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let literal = match self {
-            Self::InvalidFormat => String::from("invalid format"),
-            Self::InvalidStats(e) => format!("invalid stats param: {}", e),
-        };
-
-        write!(f, "{}", literal)
+        match self {
+            Self::InvalidFormat => write!(f, "invalid format"),
+            Self::InvalidStats(e) => write!(f, "invalid stats param: {}", e),
+            Self::InvalidTarget(e) => write!(f, "invalid target param: {}", e),
+        }
     }
 }

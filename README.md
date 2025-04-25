@@ -50,11 +50,18 @@ pbs(single)
 pbs(mo3)
 
 # Grouping charts
-group(single, 500)  # 500ms
+group(single, 500) # 500ms
 
 # Trending charts
 trend(ao12)
 trend(ao100)
+
+### ✨ NEW ✨ ###
+# Recent solves
+recent(200)                    # 200 solves
+recent(10%)                    # 10% solves
+recent(2025-01-01)             # start date
+recent(2024-01-01, 2024-12-31) # date range
 
 # Commented records
 commented

@@ -318,6 +318,20 @@ fn append_section<W: Write>(
             }
         }
 
+        AnalysisOption::Recent(target) => match session.try_from_target_range(target) {
+            Some(sub_session) => {
+                let record_count = sub_session.record_count();
+                writeln!(
+                    writer,
+                    "`{}` record{} within this range.\n",
+                    record_count,
+                    plural_form(record_count)
+                )?;
+                append_summary_table(writer, &sub_session)
+            }
+            None => append_message(writer, "INFO", "No records within this range."),
+        },
+
         AnalysisOption::Commented => {
             let commented = session.commented_records();
 

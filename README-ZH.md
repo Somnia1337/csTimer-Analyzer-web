@@ -50,11 +50,18 @@ pbs(single)
 pbs(mo3)
 
 # 直方图
-group(single, 500)  # 500ms
+group(single, 500) # 500ms
 
 # 趋势图
 trend(ao12)
 trend(ao100)
+
+### ✨ NEW ✨ ###
+# 最近记录
+recent(200)                    # 200 次复原
+recent(10%)                    # 10% 的复原
+recent(2025-01-01)             # 起始日期
+recent(2024-01-01, 2024-12-31) # 日期范围
 
 # 有注释的记录
 commented

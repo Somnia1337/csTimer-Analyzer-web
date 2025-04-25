@@ -3,6 +3,7 @@ use std::rc::Rc;
 
 use chrono::DateTime;
 
+use crate::options::TargetRange;
 use crate::record::Record;
 use crate::time::Milliseconds;
 
@@ -18,12 +19,12 @@ pub struct Session {
 
 impl Session {
     /// Creates a new `Session` from its fields.
-    pub fn from(rank: usize, name: String, date_time: (i64, i64), records: &[Record]) -> Self {
-        let records: Vec<Rc<Record>> = records.iter().cloned().map(Rc::new).collect();
+    pub fn from(rank: usize, name: String, date_time: (i64, i64), records: Vec<Record>) -> Self {
+        let records: Vec<Rc<Record>> = records.into_iter().map(Rc::new).collect();
         let records_not_dnf = records
             .iter()
             .filter(|r| !r.solve_state().is_dnf())
-            .cloned()
+            .map(Rc::clone)
             .collect();
 
         Self {
@@ -33,6 +34,28 @@ impl Session {
             records,
             records_not_dnf,
         }
+    }
+
+    /// Creates a `Session` from an existing one,
+    /// which records are within the specified range.
+    pub fn try_from_target_range(&self, target_range: &TargetRange) -> Option<Self> {
+        let records = self.records_in_target_range(target_range);
+
+        if records.is_empty() {
+            return None;
+        }
+
+        let records_not_dnf = records
+            .iter()
+            .filter(|r| !r.solve_state().is_dnf())
+            .map(Rc::clone)
+            .collect();
+
+        Some(Self {
+            records,
+            records_not_dnf,
+            ..self.clone()
+        })
     }
 
     /// The name of a `Session`.
@@ -78,6 +101,42 @@ impl Session {
 impl fmt::Display for Session {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "[#{}] {}", self.rank(), self.name())
+    }
+}
+
+impl Session {
+    /// The `Record`s within the specified `TargetRange`.
+    fn records_in_target_range(&self, target_range: &TargetRange) -> Vec<Rc<Record>> {
+        match target_range {
+            TargetRange::SolvesCount(count) => {
+                let take = *count.min(&self.record_count());
+
+                self.records()
+                    .iter()
+                    .skip(self.record_count() - take)
+                    .map(Rc::clone)
+                    .collect()
+            }
+            TargetRange::Percentage(percentage) => {
+                let p = *percentage as f32 / 100.0;
+                let take = (self.record_count() as f32 * p).ceil() as usize;
+
+                self.records_in_target_range(&TargetRange::SolvesCount(take))
+            }
+            TargetRange::DateRange(start, end) => self
+                .records()
+                .iter()
+                .filter(|r| {
+                    let date = r.date_time().date_naive();
+                    date >= *start
+                        && match end {
+                            Some(end) => date <= *end,
+                            None => true,
+                        }
+                })
+                .cloned()
+                .collect(),
+        }
     }
 }
 

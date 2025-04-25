@@ -118,12 +118,7 @@ pub fn analysis_info() -> Result<JsValue, JsValue> {
 /// Provides number of sessions to be analyzed.
 #[wasm_bindgen]
 pub fn get_session_count() -> usize {
-    STATE.with(|cell| {
-        cell.borrow()
-            .as_ref()
-            .map(|s| s.sessions.len())
-            .unwrap_or(0)
-    })
+    STATE.with(|cell| cell.borrow().as_ref().map_or(0, |s| s.sessions.len()))
 }
 
 /// Provides the analysis for the session specified by JS.

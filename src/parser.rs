@@ -48,7 +48,7 @@ pub fn parse_sessions(input: &str) -> Vec<Session> {
                                 name.clone()
                             },
                             (date_time.0 + offset, date_time.1 + offset),
-                            &records,
+                            records,
                         ));
                     }
                 }

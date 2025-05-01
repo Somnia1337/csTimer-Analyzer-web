@@ -111,12 +111,12 @@ impl fmt::Display for Record {
         let comment = if self.comment.is_empty() {
             String::new()
         } else {
-            format!("- comment: **{}**\n", self.comment)
+            format!("- comment: <strong>{}</strong>\n", self.comment)
         };
 
         write!(
             f,
-            "@{}\n\n{}- time: `{}`\n- scramble: *{}*\n{}",
+            "@{}\n\n{}- time: `{}`\n- scramble: <i>{}</i>\n{}",
             self.date_time()
                 .to_string()
                 .strip_suffix(" UTC")

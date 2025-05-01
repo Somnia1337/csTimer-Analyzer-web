@@ -255,6 +255,10 @@ fn append_section<W: Write>(
                 pbs_desc,
             )?;
 
+            if pbs.len() == 1 {
+                return Ok(());
+            }
+
             let trends = session.pbs_trends(&pbs);
             let desc = format!("{}: {} PBs", session, s_type);
             match session.draw_trending(canvas, &trends, &desc) {
@@ -320,6 +324,10 @@ fn append_section<W: Write>(
 
         AnalysisOption::Recent(target) => match session.try_from_target_range(target) {
             Some(sub_session) => {
+                if sub_session.records_not_dnf().is_empty() {
+                    return append_message(writer, "Info", "Every record is DNF.");
+                }
+
                 let record_count = sub_session.record_count();
                 writeln!(
                     writer,

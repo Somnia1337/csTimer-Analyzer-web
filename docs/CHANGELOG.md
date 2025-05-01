@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.1] - 2025-05-01
+
+### Fixed
+
+- The promise that a session contains non-DNF records can be violated with sub-sessions derived from a session (with the `recent` option).
+- Multi-line comments not rendered italic.
+- 0 or 1 PB results in an empty PBs trending chart.
+
 ## [0.10.0] - 2025-04-25
 
 ### Added

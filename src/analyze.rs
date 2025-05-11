@@ -255,19 +255,17 @@ fn append_section<W: Write>(
                 pbs_desc,
             )?;
 
-            if pbs.len() == 1 {
-                return Ok(());
-            }
-
-            let trends = session.pbs_trends(&pbs);
-            let desc = format!("{}: {} PBs", session, s_type);
-            match session.draw_trending(canvas, &trends, &desc) {
-                Ok(()) => append_image_data_url(writer, canvas, &desc)?,
-                Err(e) => append_message(
-                    writer,
-                    "ERROR",
-                    &format!("Generating trending chart failed: {}.", e),
-                )?,
+            if pbs.len() > 1 {
+                let trends = session.pbs_trends(&pbs);
+                let desc = format!("{}: {} PBs", session, s_type);
+                match session.draw_trending(canvas, &trends, &desc) {
+                    Ok(()) => append_image_data_url(writer, canvas, &desc)?,
+                    Err(e) => append_message(
+                        writer,
+                        "ERROR",
+                        &format!("Generating trending chart failed: {}.", e),
+                    )?,
+                }
             }
 
             if matches!(s_type, StatsType::Single) {

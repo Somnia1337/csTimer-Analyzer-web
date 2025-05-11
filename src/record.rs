@@ -108,6 +108,19 @@ impl fmt::Display for Record {
             format!("- state: **{}**\n", self.solve_state)
         };
 
+        let scramble = if self.scramble.contains('\n') {
+            format!(
+                r"
+```
+{}
+```
+",
+                self.scramble
+            )
+        } else {
+            format!("<i>{}</i>", self.scramble)
+        };
+
         let comment = if self.comment.is_empty() {
             String::new()
         } else {
@@ -116,14 +129,14 @@ impl fmt::Display for Record {
 
         write!(
             f,
-            "@{}\n\n{}- time: `{}`\n- scramble: <i>{}</i>\n{}",
+            "@{}\n\n{}- time: `{}`\n- scramble: {}\n{}",
             self.date_time()
                 .to_string()
                 .strip_suffix(" UTC")
                 .unwrap_or_default(),
             solve_state,
             self.time.to_readable_string(),
-            self.scramble,
+            scramble,
             comment
         )
     }

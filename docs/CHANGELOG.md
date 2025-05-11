@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.2] - 2025-05-11
+
+### Changed
+
+- Uses a code block for a multiple-lines comment (a comment that contains '\n').
+
+### Fixed
+
+- The solve detail missing for a `Single` PB history containing 1 PB.
+
 ## [0.10.1] - 2025-05-01
 
 ### Fixed

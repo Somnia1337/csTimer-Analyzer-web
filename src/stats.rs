@@ -262,8 +262,8 @@ impl Session {
             .configure_mesh()
             .label_style((MONOSPACE, LABEL_FONT_SIZE).into_font())
             .axis_desc_style((MONOSPACE, AXIS_DESC_FONT_SIZE).into_font())
-            .x_desc("Range / time")
-            .y_desc("Count")
+            .x_desc(t!("chart.group-x-desc"))
+            .y_desc(t!("chart.group-y-desc"))
             .x_label_formatter(&Seconds::to_readable_string)
             .draw()?;
 
@@ -343,7 +343,7 @@ impl Session {
             .configure_mesh()
             .label_style((MONOSPACE, LABEL_FONT_SIZE).into_font())
             .axis_desc_style((MONOSPACE, AXIS_DESC_FONT_SIZE).into_font())
-            .x_desc("Solves")
+            .x_desc(t!("chart.trend-x-desc"))
             .y_label_formatter(&Seconds::to_readable_string)
             .draw()?;
 

@@ -4,13 +4,18 @@ import { saveRenderedHTML, loadRenderedHTML } from "./db.js";
 import { analyzeTimerData } from "./analyze.js";
 import { validateFile } from "./ui-manager.js";
 import { AppError, ERROR_TYPES, handleError } from "./error-handler.js";
+import { locales, defaultOptions } from "./locale.js";
+import { locale, dictionary, getLocale } from "./index.js";
 
 let elements;
+
+const isZh = getLocale() === "zh-cn";
 
 function initializeElements() {
   elements = {
     optionsText: document.getElementById("options"),
     fileInput: document.getElementById("file2"),
+    localeButton: document.getElementById("locale-button"),
     markdownContent: document.getElementById("markdown-content"),
     errorMessage: document.getElementById("error-message"),
     errorText: document.getElementById("error-text"),
@@ -25,9 +30,14 @@ function initializeElements() {
 
 document.addEventListener("DOMContentLoaded", function () {
   initializeElements();
-  initializeDocsButton("./README-ZH.md", "readme-button", "README");
+  initializeDocsButton(
+    isZh ? "./README-ZH.md" : "./README.md",
+    "readme-button",
+    "README"
+  );
   initializeDocsButton("./docs/CHANGELOG.md", "changelog-button", "Changelog");
   initializeDocsButton("./docs/feedback.md", "feedback-button", "Feedback");
+  initializeLocaleButton();
   initializeGitHubButton();
   initializeExampleButton();
   initializeFileSelection();
@@ -82,6 +92,23 @@ function initializeDocsButton(path, id, desc) {
   });
 }
 
+function initializeLocaleButton() {
+  elements.localeButton.addEventListener("click", function () {
+    const newLocale = locale == "en" ? "zh-CN" : "en";
+    const newDictionary = locales[newLocale] || locales["en"];
+    const message = newDictionary["new-locale"];
+
+    alert(message);
+    localStorage.setItem(CONFIG.STORAGE.LOCALE_KEY, newLocale);
+    localStorage.setItem(
+      CONFIG.STORAGE.FILE_LABEL_KEY,
+      newDictionary["no-upload"]
+    );
+    saveRenderedHTML(newDictionary["waiting-for-file"]);
+    window.location.reload();
+  });
+}
+
 function initializeGitHubButton() {
   elements.githubButton.addEventListener("click", function () {
     window.open("https://github.com/Somnia1337/csTimer-Analyzer-web", "_blank");
@@ -91,7 +118,8 @@ function initializeGitHubButton() {
 function initializeExampleButton() {
   elements.useExampleButton.addEventListener("click", async function () {
     try {
-      elements.useExampleButton.textContent = "Loading...";
+      elements.useExampleButton.textContent =
+        dictionary["example-file-loading"];
 
       const response = await fetch("./example.txt");
       if (!response.ok) {
@@ -102,7 +130,7 @@ function initializeExampleButton() {
         );
       }
 
-      elements.useExampleButton.textContent = "use example file";
+      elements.useExampleButton.textContent = dictionary["example-file"];
 
       const text = await response.text();
       const blob = new Blob([text], { type: "text/plain" });
@@ -122,18 +150,20 @@ function initializeExampleButton() {
 
       await run();
 
-      elements.navHeader.textContent = "Example report";
+      elements.navHeader.textContent = dictionary["report-example"];
       localStorage.setItem(
         CONFIG.STORAGE.NAV_HEADER_KEY,
         elements.navHeader.textContent
       );
     } catch (error) {
       handleError(error, elements);
-      elements.label.textContent = "Error loading example";
+      elements.label.textContent = dictionary["example-file-error"];
       localStorage.setItem(
         CONFIG.STORAGE.FILE_LABEL_KEY,
         elements.label.textContent
       );
+    } finally {
+      elements.useExampleButton.textContent = dictionary["example-file"];
     }
   });
 }
@@ -156,7 +186,7 @@ function initializeFileSelection() {
         );
         await run();
 
-        elements.navHeader.textContent = "Report";
+        elements.navHeader.textContent = dictionary["report"];
         localStorage.setItem(
           CONFIG.STORAGE.NAV_HEADER_KEY,
           elements.navHeader.textContent
@@ -185,11 +215,13 @@ function debounce(fn, delay = 1000) {
 function initializeOptionsTextarea() {
   window.addEventListener("DOMContentLoaded", () => {
     const savedContent = localStorage.getItem(CONFIG.STORAGE.OPTIONS_KEY);
-    if (savedContent !== null) {
-      elements.optionsText.value = savedContent;
-    } else {
-      elements.optionsText.value = elements.optionsText.dataset.default;
-    }
+    elements.optionsText.value =
+      savedContent !== null
+        ? savedContent
+        : defaultOptions[locale] || defaultOptions["en"];
+
+    const placeholderKey = elements.optionsText.getAttribute("i18n");
+    elements.optionsText.placeholder = dictionary[placeholderKey];
   });
 
   elements.optionsText.addEventListener(
@@ -203,8 +235,7 @@ function initializeOptionsTextarea() {
   );
 
   elements.resetButton.addEventListener("click", () => {
-    const defaultContent = elements.optionsText.dataset.default;
-    elements.optionsText.value = defaultContent;
+    elements.optionsText.value = defaultOptions[locale] || defaultOptions["en"];
     localStorage.removeItem(CONFIG.STORAGE.OPTIONS_KEY);
   });
 }
@@ -347,7 +378,7 @@ function initializeFileLabel() {
   const savedLabel = localStorage.getItem(CONFIG.STORAGE.FILE_LABEL_KEY);
 
   if (savedLabel !== null) {
-    elements.label.textContent = savedLabel;
+    elements.label.innerHTML = savedLabel;
   }
 }
 

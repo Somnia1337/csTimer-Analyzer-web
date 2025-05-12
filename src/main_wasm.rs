@@ -47,8 +47,11 @@ pub fn init_analysis(
     options_txt: &[u8],
     data_txt: &[u8],
     canvas: HtmlCanvasElement,
+    locale: String,
 ) -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
+
+    rust_i18n::set_locale(&locale);
 
     let options_str = String::from_utf8(options_txt.to_vec())
         .map_err(|e| JsValue::from_str(&format!("Failed to parse options: {}", e)))?;

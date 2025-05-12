@@ -1,0 +1,71 @@
+colon-space = ": "
+
+[title]
+dataset = "Dataset"
+analysis-options = "Analysis Options"
+timings = "Timings"
+
+[session]
+info = "Parsed `%{session_count}` session%{session_count_plural} (`%{record_count}` %{record_plural})."
+days-total = "%{start} ~ %{end} (%{total_days} day%{total_days_plural})"
+days-practiced = "`%{days}` day%{days_plural} actually practiced (`%{percentage}` out of %{total_days} days)"
+more-records = "more records"
+
+[record]
+plural = "record%{record_count_plural}"
+state = "state"
+time = "time"
+scramble = "scramble"
+comment = "comment"
+
+[stats]
+best = "best"
+worst = "worst"
+mean = "mean"
+average = "average"
+pbs = "(<code>%{pb_count}</code> PB%{pb_count_plural})"
+pbs-desc = "PB history"
+groups = "GROUPS"
+groups-interval = "(by %{interval}s)"
+trends = "TRENDS"
+recent-record-count = "`%{record_count}` record%{record_count_plural} within this range."
+
+[option]
+info = "Parsed `%{option_count}` option%{option_count_plural} (failures ignored and duplicates removed)."
+single = "single"
+now = "now"
+summary = "Summary"
+pbs = "PBs(**%{s_type}**)"
+group = "Group(**%{s_type}**, by %{interval}s)"
+trend = "Trend(**%{s_type}**)"
+recent = "Recent(**%{range}**)"
+commented = "Commented"
+
+[chart]
+group-x-desc = "Range / time"
+group-y-desc = "Count"
+trend-x-desc = "Solves"
+
+[error]
+grouping-chart-fail = "Generating grouping chart failed: %{error_info}."
+trending-chart-fail = "Generating trending chart failed: %{error_info}."
+
+[info]
+no-session-parsed = "No session parsed successfully."
+no-option-parsed = "No option parsed successfully."
+records-not-enough = "Records not enough for %{s_type}."
+no-pb-history = "No PB histories of %{s_type}."
+all-dnf = "Every score is DNF."
+empty-points = "DNF & N/A are treated as empty points."
+no-recent-record = "No records within this range."
+no-commented-record = "No commented record."
+
+[label]
+info = "INFO"
+error = "ERROR"
+tips = "TIPS"
+
+[timings]
+data-parsing = "Data parsing"
+analyzing = "Analyzing"
+session = "Session"

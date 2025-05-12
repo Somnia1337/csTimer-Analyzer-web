@@ -1,0 +1,71 @@
+colon-space = "："
+
+[title]
+dataset = "数据集"
+analysis-options = "分析选项"
+timings = "用时信息"
+
+[session]
+info = "解析到 `%{session_count}` 个分组（`%{record_count}` %{record_plural}）。"
+days-total = "%{start} ~ %{end}（%{total_days} 天）"
+days-practiced = "`%{days}` 天真正练习过（占 %{total_days} 天的 `%{percentage}`）"
+more-records = "更多记录"
+
+[record]
+plural = "条记录"
+state = "状态"
+time = "时间"
+scramble = "打乱"
+comment = "注释"
+
+[stats]
+best = "最好"
+worst = "最差"
+mean = "平均"
+average = "去尾平均"
+pbs = "（<code>%{pb_count}</code> 次 PB）"
+pbs-desc = "PB 历史"
+groups = "分段"
+groups-interval = "（间隔 %{interval}s）"
+trends = "趋势"
+recent-record-count = "此范围内有 `%{record_count}` 条记录。"
+
+[option]
+info = "解析到 `%{option_count}` 个分析选项（忽略了失败项，移除了重复项）。"
+single = "单次"
+now = "现在"
+summary = "概览"
+pbs = "PB 历史（**%{s_type}**）"
+group = "分段（**%{s_type}**，间隔 %{interval}s）"
+trend = "趋势（**%{s_type}**）"
+recent = "近期（**%{range}**）"
+commented = "带注释记录"
+
+[chart]
+group-x-desc = "分段 / 用时"
+group-y-desc = "计数"
+trend-x-desc = "复原"
+
+[error]
+grouping-chart-fail = "绘制分段图时出错：%{error_info}。"
+trending-chart-fail = "绘制趋势图时出错：%{error_info}。"
+
+[info]
+no-session-parsed = "没有解析到分组。"
+no-option-parsed = "没有解析到分析选项。"
+records-not-enough = "记录数量不足，无法进行 %{s_type} 分析。"
+no-pb-history = "在 %{s_type} 上没有 PB 历史。"
+all-dnf = "每个成绩都是 DNF。"
+empty-points = "DNF 和无成绩点被绘制为空点。"
+no-recent-record = "此范围内没有记录。"
+no-commented-record = "没有带注释的记录。"
+
+[label]
+info = "信息"
+error = "错误"
+tips = "提示"
+
+[timings]
+data-parsing = "数据解析"
+analyzing = "分析"
+session = "分组"

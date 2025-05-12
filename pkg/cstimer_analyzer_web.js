@@ -196,13 +196,16 @@ function takeFromExternrefTable0(idx) {
  * @param {Uint8Array} options_txt
  * @param {Uint8Array} data_txt
  * @param {HTMLCanvasElement} canvas
+ * @param {string} locale
  */
-export function init_analysis(options_txt, data_txt, canvas) {
+export function init_analysis(options_txt, data_txt, canvas, locale) {
     const ptr0 = passArray8ToWasm0(options_txt, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     const ptr1 = passArray8ToWasm0(data_txt, wasm.__wbindgen_malloc);
     const len1 = WASM_VECTOR_LEN;
-    const ret = wasm.init_analysis(ptr0, len0, ptr1, len1, canvas);
+    const ptr2 = passStringToWasm0(locale, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len2 = WASM_VECTOR_LEN;
+    const ret = wasm.init_analysis(ptr0, len0, ptr1, len1, canvas, ptr2, len2);
     if (ret[1]) {
         throw takeFromExternrefTable0(ret[0]);
     }

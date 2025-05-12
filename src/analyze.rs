@@ -39,10 +39,11 @@ pub fn append_analysis_info<W: Write>(
     sessions: &[Session],
     options: &[AnalysisOption],
 ) -> io::Result<bool> {
-    append_heading(writer, 3, "Dataset")?;
+    append_heading(writer, 3, &t!("title.dataset"))?;
 
     if sessions.is_empty() {
-        writeln!(writer, "No session parsed successfully.\n")?;
+        let info = t!("info.no-session-parsed");
+        writeln!(writer, "{}\n", info)?;
         return Ok(true);
     }
 
@@ -52,41 +53,49 @@ pub fn append_analysis_info<W: Write>(
         .map(super::session::Session::record_count)
         .sum::<usize>();
 
-    writeln!(
-        writer,
-        "Parsed `{}` session{} (`{}` record{}).\n",
-        session_count,
-        plural_form(session_count),
-        record_count,
-        plural_form(record_count),
-    )?;
+    let session_info = t!(
+        "session.info",
+        session_count = session_count,
+        session_count_plural = plural_form(session_count),
+        record_count = record_count,
+        record_plural = t!(
+            "record.plural",
+            record_count_plural = plural_form(record_count)
+        ),
+    );
+    writeln!(writer, "{}\n", session_info)?;
 
     for session in sessions {
         writeln!(
             writer,
-            "- [[#{}] **{}** (`{}` records)](#session{})",
+            "- [[#{}] **{}** (`{}` {})](#session{})",
             session.rank(),
             session.name(),
             session.record_count(),
-            session.rank()
+            t!(
+                "record.plural",
+                record_count_plural = plural_form(record_count)
+            ),
+            session.rank(),
         )?;
     }
     writeln!(writer)?;
 
-    append_heading(writer, 3, "Analysis Options")?;
+    append_heading(writer, 3, &t!("title.analysis-options"))?;
 
     if options.is_empty() {
-        writeln!(writer, "No option parsed successfully.\n",)?;
+        let info = t!("info.no-option-parsed");
+        writeln!(writer, "{}\n", info)?;
         return Ok(true);
     }
 
     let option_count = options.len();
-    writeln!(
-        writer,
-        "Parsed `{}` option{} (failures ignored and duplicates removed).\n",
-        option_count,
-        plural_form(option_count)
-    )?;
+    let option_info = t!(
+        "option.info",
+        option_count = option_count,
+        option_count_plural = plural_form(option_count)
+    );
+    writeln!(writer, "{}\n", option_info)?;
 
     for option in options {
         writeln!(writer, "- {}", option)?;
@@ -101,19 +110,24 @@ fn append_session_date_time<W: Write>(writer: &mut W, session: &Session) -> io::
     let (start, end) = session.date_time();
     let (start, end) = (start.date_naive(), end.date_naive());
     let days = session.days_with_record();
-    let total_days = end.signed_duration_since(start).num_days() + 1;
+    let total_days = end.signed_duration_since(start).num_days() as usize + 1;
 
-    writeln!(
-        writer,
-        "- {} ~ {} ({} days)\n- `{}` day{} actually practiced (`{:.1}%` out of {} days)\n",
-        start,
-        end,
-        total_days,
-        days,
-        plural_form(days),
-        percentage(days, total_days as usize),
-        total_days,
-    )
+    let t_days_total = t!(
+        "session.days-total",
+        start = start,
+        end = end,
+        total_days = total_days,
+        total_days_plural = plural_form(total_days),
+    );
+    let t_days_practiced = t!(
+        "session.days-practiced",
+        days = days,
+        days_plural = plural_form(days),
+        percentage = format!("{:.1}%", percentage(days, total_days)),
+        total_days = total_days
+    );
+
+    writeln!(writer, "- {}\n- {}\n", t_days_total, t_days_practiced)
 }
 
 /// Appends the details of some `Record`s, a HTML collapsible
@@ -125,7 +139,11 @@ fn append_records_detail<W: Write>(
     writeln!(writer, "[#{}] {}", records[0].0, records[0].1)?;
 
     if records.len() > 1 {
-        writeln!(writer, "<details>\n<summary>... more records</summary>\n")?;
+        writeln!(
+            writer,
+            "<details>\n<summary>... {}</summary>\n",
+            t!("session.more-records")
+        )?;
         for pair in records.iter().skip(1) {
             writeln!(writer, "[#{}] {}", pair.0, pair.1)?;
         }
@@ -139,9 +157,13 @@ fn append_records_detail<W: Write>(
 fn append_summary_table<W: Write>(writer: &mut W, session: &Session) -> io::Result<()> {
     let (best, worst, mean, average) = session.summary();
     let summary = format!(
-        r"| best | worst | mean | average |
+        r"| {} | {} | {} | {} |
 | :-: | :-: | :-: | :-: |
 | `{}` | `{}` | `{}` | `{}` |",
+        t!("stats.best"),
+        t!("stats.worst"),
+        t!("stats.mean"),
+        t!("stats.average"),
         best.to_readable_string(),
         worst.to_readable_string(),
         mean.to_readable_string(),
@@ -166,7 +188,8 @@ fn append_summary_table<W: Write>(writer: &mut W, session: &Session) -> io::Resu
 
 /// Appends a quote with a label and a message.
 fn append_message<W: Write>(writer: &mut W, label: &str, content: &str) -> io::Result<()> {
-    writeln!(writer, "> **{}**: {}\n", label, content)
+    let cs = t!("colon-space");
+    writeln!(writer, "> **{}**{cs}{}\n", label, content)
 }
 
 /// Appends an image data url.
@@ -190,12 +213,30 @@ pub fn append_timings<W: Write>(
     timings: &[(usize, Duration)],
     overall_time: Duration,
 ) -> io::Result<()> {
-    append_heading(writer, 3, "Timings")?;
+    let cs = t!("colon-space");
 
-    writeln!(writer, "- Data parsing: {:.1?}", parsing_time)?;
-    writeln!(writer, "- Analyzing: {:.1?}", overall_time)?;
+    append_heading(writer, 3, &t!("title.timings"))?;
+
+    writeln!(
+        writer,
+        "- {}{cs}{:.1?}",
+        t!("timings.data-parsing"),
+        parsing_time
+    )?;
+    writeln!(
+        writer,
+        "- {}{cs}{:.1?}",
+        t!("timings.analyzing"),
+        overall_time
+    )?;
     for (rank, timing) in timings {
-        writeln!(writer, "\t- Session [#{}]: {:.1?}", rank, timing)?;
+        writeln!(
+            writer,
+            "\t- {} [#{}]{cs}{:.1?}",
+            t!("timings.session"),
+            rank,
+            timing
+        )?;
     }
 
     Ok(())
@@ -215,8 +256,8 @@ fn append_section<W: Write>(
         if session.record_count() < s_scale {
             return append_message(
                 writer,
-                "INFO",
-                &format!("Records not enough for {}.", s_type),
+                &t!("label.info"),
+                &t!("info.records-not-enough", s_type = s_type),
             );
         }
     }
@@ -228,10 +269,15 @@ fn append_section<W: Write>(
             let pbs = session.pbs(s_type);
 
             if pbs.is_empty() {
-                return append_message(writer, "INFO", &format!("No PB histories of {}.", s_type));
+                return append_message(
+                    writer,
+                    &t!("label.info"),
+                    &t!("info.no-pb-history", s_type = s_type),
+                );
             }
 
             let (first_pb, last_pb) = (pbs[0].1, pbs[pbs.len() - 1].1);
+            let pb_count = pbs.len();
             let pbs_desc = pbs
                 .iter()
                 .map(|pair| pair.1.to_readable_string())
@@ -241,7 +287,7 @@ fn append_section<W: Write>(
             writeln!(
                 writer,
                 r"<details>
-<summary><code>{} -> {}</code> (<code>{}</code> PBs)</summary>
+<summary><code>{} -> {}</code> {}</summary>
 
 ```
 {}
@@ -251,19 +297,24 @@ fn append_section<W: Write>(
 ",
                 first_pb.to_readable_string(),
                 last_pb.to_readable_string(),
-                pbs.len(),
+                t!(
+                    "stats.pbs",
+                    pb_count = pb_count,
+                    pb_count_plural = plural_form(pb_count),
+                ),
                 pbs_desc,
             )?;
 
-            if pbs.len() > 1 {
+            if pb_count > 1 {
+                let cs = t!("colon-space");
                 let trends = session.pbs_trends(&pbs);
-                let desc = format!("{}: {} PBs", session, s_type);
+                let desc = format!("{}{cs}{} {}", session, s_type, t!("stats.pbs-desc"));
                 match session.draw_trending(canvas, &trends, &desc) {
                     Ok(()) => append_image_data_url(writer, canvas, &desc)?,
                     Err(e) => append_message(
                         writer,
-                        "ERROR",
-                        &format!("Generating trending chart failed: {}.", e),
+                        &t!("label.error"),
+                        &t!("error.trending-chart-fail", error_info = e),
                     )?,
                 }
             }
@@ -283,18 +334,21 @@ fn append_section<W: Write>(
         AnalysisOption::Group(s_type, interval) => {
             let groups = session.group(*interval, s_type);
 
+            let cs = t!("colon-space");
             let desc = format!(
-                "{}: {} GROUPS (by {}s)",
+                "{}{cs}{} {} {}",
                 session,
                 s_type,
-                interval.as_seconds()
+                t!("stats.groups"),
+                t!("stats.groups-interval", interval = interval.as_seconds()),
             );
+
             match session.draw_grouping(canvas, &groups, *interval, &desc) {
                 Ok(()) => append_image_data_url(writer, canvas, &desc),
                 Err(e) => append_message(
                     writer,
-                    "ERROR",
-                    &format!("Generating grouping chart failed: {}.", e),
+                    &t!("label.error"),
+                    &t!("error.grouping-chart-fail", error_info = e),
                 ),
             }
         }
@@ -303,19 +357,21 @@ fn append_section<W: Write>(
             let trends = session.trend(s_type);
 
             if trends.iter().all(|p| p.1 == 0) {
-                return append_message(writer, "INFO", &format!("Every {} is DNF.", s_type));
+                return append_message(writer, &t!("label.info"), &t!("info.all-dnf"));
             }
 
-            let desc = format!("{}: {} TRENDS", session, s_type);
+            let cs = t!("colon-space");
+            let desc = format!("{}{cs}{} {}", session, s_type, t!("stats.trends"));
+
             match session.draw_trending(canvas, &trends, &desc) {
                 Ok(()) => {
                     append_image_data_url(writer, canvas, &desc)?;
-                    append_message(writer, "TIPS", "DNF & N/A are treated as empty points.")
+                    append_message(writer, &t!("label.tips"), &t!("info.empty-points"))
                 }
                 Err(e) => append_message(
                     writer,
-                    "ERROR",
-                    &format!("Generating trending chart failed: {}.", e),
+                    &t!("label.error"),
+                    &t!("error.trending-chart-fail", error_info = e),
                 ),
             }
         }
@@ -323,26 +379,26 @@ fn append_section<W: Write>(
         AnalysisOption::Recent(target) => match session.try_from_target_range(target) {
             Some(sub_session) => {
                 if sub_session.records_not_dnf().is_empty() {
-                    return append_message(writer, "Info", "Every record is DNF.");
+                    return append_message(writer, &t!("label.info"), &t!("info.all-dnf"));
                 }
 
                 let record_count = sub_session.record_count();
-                writeln!(
-                    writer,
-                    "`{}` record{} within this range.\n",
-                    record_count,
-                    plural_form(record_count)
-                )?;
+                let t_recent_record_count = t!(
+                    "stats.recent-record-count",
+                    record_count = record_count,
+                    record_count_plural = plural_form(record_count)
+                );
+                writeln!(writer, "{}\n", t_recent_record_count)?;
                 append_summary_table(writer, &sub_session)
             }
-            None => append_message(writer, "INFO", "No records within this range."),
+            None => append_message(writer, &t!("label.info"), &t!("info.no-recent-record")),
         },
 
         AnalysisOption::Commented => {
             let commented = session.commented_records();
 
             if commented.is_empty() {
-                append_message(writer, "INFO", "No commented record.")
+                append_message(writer, &t!("label.info"), &t!("info.no-commented-record"))
             } else {
                 append_records_detail(writer, &commented)
             }
@@ -359,18 +415,23 @@ pub fn analyze_single_session<W: Write>(
 ) -> io::Result<Duration> {
     let session_timer = Instant::now();
 
+    let record_count = session.record_count();
     let session_heading = format!(
-        "<a id=\"session{}\">[#{}] **{}** (`{}` records)</a>",
+        "<a id=\"session{}\">[#{}] **{}** (`{}` {})</a>",
         session.rank(),
         session.rank(),
         session.name(),
-        session.record_count(),
+        record_count,
+        t!(
+            "record.plural",
+            record_count_plural = plural_form(record_count)
+        ),
     );
     append_heading(writer, 3, &session_heading)?;
     append_session_date_time(writer, session)?;
 
     if session.records_not_dnf().is_empty() {
-        append_message(writer, "Info", "Every record is DNF.")?;
+        append_message(writer, &t!("label.info"), &t!("info.all-dnf"))?;
     } else {
         for a_type in options {
             append_section(writer, session, a_type, canvas)?;

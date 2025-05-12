@@ -8,6 +8,7 @@ import init, {
 import { sanitizeInput } from "./ui-manager.js";
 import { CONFIG } from "./constants.js";
 import { renderMarkdown } from "./scripts.js";
+import { locale } from "./index.js";
 
 let analysisCanvas;
 
@@ -32,7 +33,8 @@ export async function analyzeTimerData(optionsText, file) {
   await init_analysis(
     new Uint8Array(optionsData),
     new Uint8Array(fileData),
-    getAnalysisCanvas()
+    getAnalysisCanvas(),
+    locale
   );
 
   const chunks = [];

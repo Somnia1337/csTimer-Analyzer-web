@@ -28,7 +28,7 @@ pub enum StatsType {
 impl fmt::Display for StatsType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let label = match self {
-            Self::Single => String::from("single"),
+            Self::Single => t!("option.single").to_string(),
             Self::Mean(scale) => format!("mo{}", scale),
             Self::Average(scale) => format!("ao{}", scale),
         };
@@ -163,7 +163,7 @@ impl fmt::Display for TargetRange {
                 start.format("%Y-%m-%d"),
                 match end {
                     Some(end) => end.format("%Y-%m-%d").to_string(),
-                    None => String::from("now"),
+                    None => t!("option.now").to_string(),
                 },
             ),
         }
@@ -241,14 +241,18 @@ pub enum AnalysisOption {
 impl fmt::Display for AnalysisOption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let label = match self {
-            Self::Summary => String::from("Summary"),
-            Self::Pbs(s_type) => format!("PBs(**{}**)", s_type),
+            Self::Summary => t!("option.summary"),
+            Self::Pbs(s_type) => t!("option.pbs", s_type = s_type),
             Self::Group(s_type, interval) => {
-                format!("Group(**{}**, by {}s)", s_type, interval.as_seconds())
+                t!(
+                    "option.group",
+                    s_type = s_type,
+                    interval = interval.as_seconds(),
+                )
             }
-            Self::Trend(s_type) => format!("Trend(**{}**)", s_type),
-            Self::Recent(range) => format!("Recent(**{}**)", range),
-            Self::Commented => String::from("Commented"),
+            Self::Trend(s_type) => t!("option.trend", s_type = s_type),
+            Self::Recent(range) => t!("option.recent", range = range),
+            Self::Commented => t!("option.commented"),
         };
 
         write!(f, "{}", label)

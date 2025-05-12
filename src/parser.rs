@@ -45,7 +45,7 @@ pub fn parse_sessions(input: &str) -> Vec<Session> {
                             if name.is_empty() {
                                 rank.to_string()
                             } else {
-                                name.clone()
+                                name.trim().to_owned()
                             },
                             (date_time.0 + offset, date_time.1 + offset),
                             records,

@@ -102,10 +102,11 @@ impl Record {
 
 impl fmt::Display for Record {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let cs = t!("colon-space");
         let solve_state = if self.solve_state.is_ok() {
             String::new()
         } else {
-            format!("- state: **{}**\n", self.solve_state)
+            format!("- {}{cs}**{}**\n", t!("record.state"), self.solve_state)
         };
 
         let scramble = if self.scramble.contains('\n') {
@@ -124,18 +125,24 @@ impl fmt::Display for Record {
         let comment = if self.comment.is_empty() {
             String::new()
         } else {
-            format!("- comment: <strong>{}</strong>\n", self.comment)
+            format!(
+                "- {}{cs}<strong>{}</strong>\n",
+                t!("record.comment"),
+                self.comment
+            )
         };
 
         write!(
             f,
-            "@{}\n\n{}- time: `{}`\n- scramble: {}\n{}",
+            "@{}\n\n{}- {}{cs}`{}`\n- {}{cs}{}\n{}",
             self.date_time()
                 .to_string()
                 .strip_suffix(" UTC")
                 .unwrap_or_default(),
             solve_state,
+            t!("record.time"),
             self.time.to_readable_string(),
+            t!("record.scramble"),
             scramble,
             comment
         )

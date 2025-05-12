@@ -8,7 +8,7 @@ export function render_markdown(input: string): any;
 /**
  * Initializes the analysis, parses options and sessions.
  */
-export function init_analysis(options_txt: Uint8Array, data_txt: Uint8Array, canvas: HTMLCanvasElement): void;
+export function init_analysis(options_txt: Uint8Array, data_txt: Uint8Array, canvas: HTMLCanvasElement, locale: string): void;
 /**
  * Provides information about the dataset and parsed options.
  */
@@ -31,7 +31,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly render_markdown: (a: number, b: number) => any;
-  readonly init_analysis: (a: number, b: number, c: number, d: number, e: any) => [number, number];
+  readonly init_analysis: (a: number, b: number, c: number, d: number, e: any, f: number, g: number) => [number, number];
   readonly analysis_info: () => [number, number, number];
   readonly get_session_count: () => number;
   readonly analyze_session: (a: number) => [number, number, number];

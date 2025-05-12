@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
 export const render_markdown: (a: number, b: number) => any;
-export const init_analysis: (a: number, b: number, c: number, d: number, e: any) => [number, number];
+export const init_analysis: (a: number, b: number, c: number, d: number, e: any, f: number, g: number) => [number, number];
 export const analysis_info: () => [number, number, number];
 export const get_session_count: () => number;
 export const analyze_session: (a: number) => [number, number, number];

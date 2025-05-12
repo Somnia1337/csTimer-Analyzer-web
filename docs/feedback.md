@@ -7,7 +7,7 @@ All user feedbacks, interpretation and completion status will be documented in t
 ### 📝 Planned
 
 ```
-#3
+#3 #6
 ```
 
 ### ✅ Implemented
@@ -34,3 +34,7 @@ All user feedbacks, interpretation and completion status will be documented in t
 - 📝 `#3` Add: a sidebar for backtracking past reports.
 - ✅ `#4` Add: a floating navigator to jump between sessions.
 - ✅ `#5` Add: a back-to-top button.
+
+> `2025-05-11` 折线图能不能做成半对数图，也就是横轴是练习量的对数
+
+- 📝 `#6` Change: use a logarithmic scale for the x-axis on trending charts.

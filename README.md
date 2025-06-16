@@ -68,7 +68,5 @@ commented
 
 ### Todo
 
-- feat:
-  - i18n.
-  - treat `StatsScale` 0 as "auto".
+- feat: treat `StatsScale` 0 as "auto".
 - test: add test modules.

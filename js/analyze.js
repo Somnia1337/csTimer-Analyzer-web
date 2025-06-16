@@ -2,28 +2,28 @@ import init, {
   init_analysis,
   analysis_info,
   get_session_count,
-  analyze_session,
+  analyze_nth_session,
   get_timings,
 } from "../pkg/cstimer_analyzer_web.js";
 import { sanitizeInput } from "./ui-manager.js";
 import { CONFIG } from "./constants.js";
-import { renderMarkdown } from "./scripts.js";
-import { locale } from "./index.js";
+import { scrollInto } from "./scripts.js";
+import { locale, renderMarkdown } from "./index.js";
 
-let analysisCanvas;
+let canvas;
 
-function getAnalysisCanvas() {
-  if (!analysisCanvas) {
-    analysisCanvas = document.createElement("canvas");
-    analysisCanvas.style.display = "none";
-    analysisCanvas.width = CONFIG.CANVAS.WIDTH;
-    analysisCanvas.height = CONFIG.CANVAS.HEIGHT;
-    document.body.appendChild(analysisCanvas);
+function getCanvas() {
+  if (!canvas) {
+    canvas = document.createElement("canvas");
+    canvas.style.display = "none";
+    canvas.width = CONFIG.CANVAS.WIDTH;
+    canvas.height = CONFIG.CANVAS.HEIGHT;
+    document.body.appendChild(canvas);
   }
-  return analysisCanvas;
+  return canvas;
 }
 
-export async function analyzeTimerData(optionsText, file) {
+export async function analyze(optionsText, file) {
   await init();
 
   const encoder = new TextEncoder();
@@ -33,7 +33,7 @@ export async function analyzeTimerData(optionsText, file) {
   await init_analysis(
     new Uint8Array(optionsData),
     new Uint8Array(fileData),
-    getAnalysisCanvas(),
+    getCanvas(),
     locale
   );
 
@@ -45,27 +45,20 @@ export async function analyzeTimerData(optionsText, file) {
   await renderMarkdown(infoChunk);
 
   if (infoChunk.includes("Analysis aborted")) {
-    markdownContent.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-
+    scrollInto(markdownContent);
     return;
   }
 
   const sessionCount = get_session_count();
 
   for (let i = 0; i < sessionCount; i++) {
-    const sessionChunk = analyze_session(i);
+    const sessionChunk = analyze_nth_session(i);
     chunks.push(sessionChunk);
     await renderMarkdown(sessionChunk);
     await new Promise((r) => requestAnimationFrame(r));
 
     if (i == 0) {
-      markdownContent.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      scrollInto(markdownContent);
     }
   }
 

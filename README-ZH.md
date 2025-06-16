@@ -68,7 +68,5 @@ commented
 
 ### Todo
 
-- 功能：
-  - 国际化。
-  - 将 `StatsScale` 0 视为“自动”。
+- 功能：将 `StatsScale` 0 视为“自动”。
 - 测试：添加测试模块。

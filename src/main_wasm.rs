@@ -5,7 +5,7 @@ use pulldown_cmark::{Options, Parser, html};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
-use crate::analyze::{analyze_single_session, append_analysis_info, append_timings};
+use crate::analyze::{analyze_session, write_analysis_info, write_timings};
 use crate::options::AnalysisOption;
 use crate::parser::{parse_options, parse_sessions};
 use crate::session::Session;
@@ -93,7 +93,7 @@ pub fn analysis_info() -> Result<JsValue, JsValue> {
         if let Some(ref mut state) = *borrow {
             let mut chunk = Vec::new();
 
-            match append_analysis_info(&mut chunk, &state.sessions, &state.options) {
+            match write_analysis_info(&mut chunk, &state.sessions, &state.options) {
                 Ok(empty) => match String::from_utf8(chunk) {
                     Ok(mut markdown) => {
                         if empty {
@@ -126,21 +126,21 @@ pub fn get_session_count() -> usize {
 
 /// Provides the analysis for the session specified by JS.
 #[wasm_bindgen]
-pub fn analyze_session(index: usize) -> Result<JsValue, JsValue> {
+pub fn analyze_nth_session(n: usize) -> Result<JsValue, JsValue> {
     let mut result = Err(JsValue::from_str("State not found"));
 
     STATE.with(|cell| {
         let mut borrow = cell.borrow_mut();
         if let Some(ref mut state) = *borrow {
-            if index >= state.sessions.len() {
+            if n >= state.sessions.len() {
                 result = Err(JsValue::from_str("Invalid session index"));
                 return;
             }
 
-            let session = &state.sessions[index];
+            let session = &state.sessions[n];
             let mut chunk = Vec::new();
 
-            match analyze_single_session(session, &state.options, &mut chunk, &state.canvas) {
+            match analyze_session(session, &state.options, &mut chunk, &state.canvas) {
                 Ok(duration) => {
                     state.session_times.push((session.rank(), duration));
                     let markdown = String::from_utf8(chunk)
@@ -171,7 +171,7 @@ pub fn get_timings() -> Result<JsValue, JsValue> {
         if let Some(state) = maybe_state.take() {
             let mut chunk = Vec::new();
 
-            if let Err(e) = append_timings(
+            if let Err(e) = write_timings(
                 &mut chunk,
                 state.parsing_time,
                 &state.session_times,

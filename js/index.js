@@ -29,5 +29,4 @@ function getLocale() {
   return raw ? raw.trim().toLowerCase() : "en";
 }
 
-export { renderMarkdown };
-export { locale, dictionary, getLocale };
+export { locale, dictionary, getLocale, renderMarkdown };

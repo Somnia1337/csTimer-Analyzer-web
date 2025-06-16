@@ -28,18 +28,18 @@ fn plural_form(count: usize) -> String {
     }
 }
 
-/// Appends a markdown heading with the specified level.
-fn append_heading<W: Write>(writer: &mut W, level: usize, title: &str) -> io::Result<()> {
+/// Writes a markdown heading with the specified level.
+fn write_heading<W: Write>(writer: &mut W, level: usize, title: &str) -> io::Result<()> {
     writeln!(writer, "{} {}\n", "#".repeat(level), title)
 }
 
-/// Appends information about the dataset and parsed options.
-pub fn append_analysis_info<W: Write>(
+/// Writes information about the dataset and parsed options.
+pub fn write_analysis_info<W: Write>(
     writer: &mut W,
     sessions: &[Session],
     options: &[AnalysisOption],
 ) -> io::Result<bool> {
-    append_heading(writer, 3, &t!("title.dataset"))?;
+    write_heading(writer, 3, &t!("title.dataset"))?;
 
     if sessions.is_empty() {
         let info = t!("info.no-session-parsed");
@@ -81,7 +81,7 @@ pub fn append_analysis_info<W: Write>(
     }
     writeln!(writer)?;
 
-    append_heading(writer, 3, &t!("title.analysis-options"))?;
+    write_heading(writer, 3, &t!("title.analysis-options"))?;
 
     if options.is_empty() {
         let info = t!("info.no-option-parsed");
@@ -105,8 +105,8 @@ pub fn append_analysis_info<W: Write>(
     Ok(false)
 }
 
-/// Appends information about days practiced on a session.
-fn append_session_date_time<W: Write>(writer: &mut W, session: &Session) -> io::Result<()> {
+/// Writes information about days practiced on a session.
+fn write_session_date_time<W: Write>(writer: &mut W, session: &Session) -> io::Result<()> {
     let (start, end) = session.date_time();
     let (start, end) = (start.date_naive(), end.date_naive());
     let days = session.days_with_record();
@@ -130,9 +130,9 @@ fn append_session_date_time<W: Write>(writer: &mut W, session: &Session) -> io::
     writeln!(writer, "- {}\n- {}\n", t_days_total, t_days_practiced)
 }
 
-/// Appends the details of some `Record`s, a HTML collapsible
+/// Writes the details of some `Record`s, a HTML collapsible
 /// element will be added when there are more than one `Record`.
-fn append_records_detail<W: Write>(
+fn write_records_detail<W: Write>(
     writer: &mut W,
     records: &[(usize, Rc<Record>)],
 ) -> io::Result<()> {
@@ -153,8 +153,8 @@ fn append_records_detail<W: Write>(
     Ok(())
 }
 
-/// Appends two tables in the summary section.
-fn append_summary_table<W: Write>(writer: &mut W, session: &Session) -> io::Result<()> {
+/// Writes two tables in the summary section.
+fn write_summary_table<W: Write>(writer: &mut W, session: &Session) -> io::Result<()> {
     let (best, worst, mean, average) = session.summary();
     let summary = format!(
         r"| {} | {} | {} | {} |
@@ -186,14 +186,14 @@ fn append_summary_table<W: Write>(writer: &mut W, session: &Session) -> io::Resu
     writeln!(writer, "{}\n\n{}\n", summary, solve_states)
 }
 
-/// Appends a quote with a label and a message.
-fn append_message<W: Write>(writer: &mut W, label: &str, content: &str) -> io::Result<()> {
+/// Writes a quote with a label and a message.
+fn write_message<W: Write>(writer: &mut W, label: &str, content: &str) -> io::Result<()> {
     let cs = t!("colon-space");
     writeln!(writer, "> **{}**{cs}{}\n", label, content)
 }
 
-/// Appends an image data url.
-fn append_image_data_url<W: Write>(
+/// Writes an image data url.
+fn write_image_data_url<W: Write>(
     writer: &mut W,
     canvas: &HtmlCanvasElement,
     desc: &str,
@@ -206,8 +206,8 @@ fn append_image_data_url<W: Write>(
     )
 }
 
-/// Appends debug information about analysis timings.
-pub fn append_timings<W: Write>(
+/// Writes debug information about analysis timings.
+pub fn write_timings<W: Write>(
     writer: &mut W,
     parsing_time: Duration,
     timings: &[(usize, Duration)],
@@ -215,7 +215,7 @@ pub fn append_timings<W: Write>(
 ) -> io::Result<()> {
     let cs = t!("colon-space");
 
-    append_heading(writer, 3, &t!("title.timings"))?;
+    write_heading(writer, 3, &t!("title.timings"))?;
 
     writeln!(
         writer,
@@ -242,19 +242,19 @@ pub fn append_timings<W: Write>(
     Ok(())
 }
 
-/// Appends an analysis section.
-fn append_section<W: Write>(
+/// Writes an analysis section.
+fn write_section<W: Write>(
     writer: &mut W,
     session: &Session,
     op: &AnalysisOption,
     canvas: &HtmlCanvasElement,
 ) -> io::Result<()> {
-    append_heading(writer, 4, &format!("{}", op))?;
+    write_heading(writer, 4, &format!("{}", op))?;
 
     if let Some(s_type) = op.stats_type() {
         let s_scale = s_type.scale();
         if session.record_count() < s_scale {
-            return append_message(
+            return write_message(
                 writer,
                 &t!("label.info"),
                 &t!("info.records-not-enough", s_type = s_type),
@@ -263,13 +263,13 @@ fn append_section<W: Write>(
     }
 
     match op {
-        AnalysisOption::Summary => append_summary_table(writer, session),
+        AnalysisOption::Summary => write_summary_table(writer, session),
 
         AnalysisOption::Pbs(s_type) => {
             let pbs = session.pbs(s_type);
 
             if pbs.is_empty() {
-                return append_message(
+                return write_message(
                     writer,
                     &t!("label.info"),
                     &t!("info.no-pb-history", s_type = s_type),
@@ -310,8 +310,8 @@ fn append_section<W: Write>(
                 let trends = session.pbs_trends(&pbs);
                 let desc = format!("{}{cs}{} {}", session, s_type, t!("stats.pbs-desc"));
                 match session.draw_trending(canvas, &trends, &desc) {
-                    Ok(()) => append_image_data_url(writer, canvas, &desc)?,
-                    Err(e) => append_message(
+                    Ok(()) => write_image_data_url(writer, canvas, &desc)?,
+                    Err(e) => write_message(
                         writer,
                         &t!("label.error"),
                         &t!("error.trending-chart-fail", error_info = e),
@@ -320,7 +320,7 @@ fn append_section<W: Write>(
             }
 
             if matches!(s_type, StatsType::Single) {
-                append_records_detail(
+                write_records_detail(
                     writer,
                     &pbs.iter()
                         .map(|r| (r.0 + 1, r.2.clone()))
@@ -344,8 +344,8 @@ fn append_section<W: Write>(
             );
 
             match session.draw_grouping(canvas, &groups, *interval, &desc) {
-                Ok(()) => append_image_data_url(writer, canvas, &desc),
-                Err(e) => append_message(
+                Ok(()) => write_image_data_url(writer, canvas, &desc),
+                Err(e) => write_message(
                     writer,
                     &t!("label.error"),
                     &t!("error.grouping-chart-fail", error_info = e),
@@ -357,7 +357,7 @@ fn append_section<W: Write>(
             let trends = session.trend(s_type);
 
             if trends.iter().all(|p| p.1 == 0) {
-                return append_message(writer, &t!("label.info"), &t!("info.all-dnf"));
+                return write_message(writer, &t!("label.info"), &t!("info.all-dnf"));
             }
 
             let cs = t!("colon-space");
@@ -365,10 +365,10 @@ fn append_section<W: Write>(
 
             match session.draw_trending(canvas, &trends, &desc) {
                 Ok(()) => {
-                    append_image_data_url(writer, canvas, &desc)?;
-                    append_message(writer, &t!("label.tips"), &t!("info.empty-points"))
+                    write_image_data_url(writer, canvas, &desc)?;
+                    write_message(writer, &t!("label.tips"), &t!("info.empty-points"))
                 }
-                Err(e) => append_message(
+                Err(e) => write_message(
                     writer,
                     &t!("label.error"),
                     &t!("error.trending-chart-fail", error_info = e),
@@ -379,7 +379,7 @@ fn append_section<W: Write>(
         AnalysisOption::Recent(target) => match session.try_from_target_range(target) {
             Some(sub_session) => {
                 if sub_session.records_not_dnf().is_empty() {
-                    return append_message(writer, &t!("label.info"), &t!("info.all-dnf"));
+                    return write_message(writer, &t!("label.info"), &t!("info.all-dnf"));
                 }
 
                 let record_count = sub_session.record_count();
@@ -389,25 +389,25 @@ fn append_section<W: Write>(
                     record_count_plural = plural_form(record_count)
                 );
                 writeln!(writer, "{}\n", t_recent_record_count)?;
-                append_summary_table(writer, &sub_session)
+                write_summary_table(writer, &sub_session)
             }
-            None => append_message(writer, &t!("label.info"), &t!("info.no-recent-record")),
+            None => write_message(writer, &t!("label.info"), &t!("info.no-recent-record")),
         },
 
         AnalysisOption::Commented => {
             let commented = session.commented_records();
 
             if commented.is_empty() {
-                append_message(writer, &t!("label.info"), &t!("info.no-commented-record"))
+                write_message(writer, &t!("label.info"), &t!("info.no-commented-record"))
             } else {
-                append_records_detail(writer, &commented)
+                write_records_detail(writer, &commented)
             }
         }
     }
 }
 
 /// Analyzes a single session with parsed options.
-pub fn analyze_single_session<W: Write>(
+pub fn analyze_session<W: Write>(
     session: &Session,
     options: &[AnalysisOption],
     writer: &mut W,
@@ -427,14 +427,14 @@ pub fn analyze_single_session<W: Write>(
             record_count_plural = plural_form(record_count)
         ),
     );
-    append_heading(writer, 3, &session_heading)?;
-    append_session_date_time(writer, session)?;
+    write_heading(writer, 3, &session_heading)?;
+    write_session_date_time(writer, session)?;
 
     if session.records_not_dnf().is_empty() {
-        append_message(writer, &t!("label.info"), &t!("info.all-dnf"))?;
+        write_message(writer, &t!("label.info"), &t!("info.all-dnf"))?;
     } else {
         for a_type in options {
-            append_section(writer, session, a_type, canvas)?;
+            write_section(writer, session, a_type, canvas)?;
         }
     }
 

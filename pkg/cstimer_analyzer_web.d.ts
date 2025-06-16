@@ -20,7 +20,7 @@ export function get_session_count(): number;
 /**
  * Provides the analysis for the session specified by JS.
  */
-export function analyze_session(index: number): any;
+export function analyze_nth_session(n: number): any;
 /**
  * Provides debug information about analysis timings.
  */
@@ -34,7 +34,7 @@ export interface InitOutput {
   readonly init_analysis: (a: number, b: number, c: number, d: number, e: any, f: number, g: number) => [number, number];
   readonly analysis_info: () => [number, number, number];
   readonly get_session_count: () => number;
-  readonly analyze_session: (a: number) => [number, number, number];
+  readonly analyze_nth_session: (a: number) => [number, number, number];
   readonly get_timings: () => [number, number, number];
   readonly __wbindgen_exn_store: (a: number) => void;
   readonly __externref_table_alloc: () => number;

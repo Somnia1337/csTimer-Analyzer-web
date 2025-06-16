@@ -234,11 +234,11 @@ export function get_session_count() {
 
 /**
  * Provides the analysis for the session specified by JS.
- * @param {number} index
+ * @param {number} n
  * @returns {any}
  */
-export function analyze_session(index) {
-    const ret = wasm.analyze_session(index);
+export function analyze_nth_session(n) {
+    const ret = wasm.analyze_nth_session(n);
     if (ret[2]) {
         throw takeFromExternrefTable0(ret[1]);
     }

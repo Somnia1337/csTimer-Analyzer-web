@@ -193,6 +193,31 @@ impl Session {
         trends
     }
 
+    /// Decides a proper interval for grouping in case it's 0.
+    pub fn decide_interval(&self) -> Milliseconds {
+        const GRAIN: Milliseconds = 100;
+        const TARGET_GROUPS: u32 = 24;
+
+        let (best, worst) = self.best_and_worst();
+        let diff = worst - best;
+        let (mut closest, mut k) = (Milliseconds::MAX, 1);
+
+        for i in 1..(diff / GRAIN) {
+            let interval = i * GRAIN;
+            let groups = diff / interval;
+            let delta = groups.abs_diff(TARGET_GROUPS);
+
+            if delta <= closest {
+                closest = delta;
+                k = i;
+            } else {
+                break;
+            }
+        }
+
+        k * GRAIN
+    }
+
     /// Splits times of the specified `StatsType`
     /// into groups, by a fixed interval.
     pub fn group(&self, interval: Milliseconds, s_type: &StatsType) -> Vec<GroupTime> {

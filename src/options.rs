@@ -244,11 +244,15 @@ impl fmt::Display for AnalysisOption {
             Self::Summary => t!("option.summary"),
             Self::Pbs(s_type) => t!("option.pbs", s_type = s_type),
             Self::Group(s_type, interval) => {
-                t!(
-                    "option.group",
-                    s_type = s_type,
-                    interval = interval.as_seconds(),
-                )
+                if *interval > 0 {
+                    t!(
+                        "option.group",
+                        s_type = s_type,
+                        interval = interval.as_seconds(),
+                    )
+                } else {
+                    t!("option.group-by-zero", s_type = s_type)
+                }
             }
             Self::Trend(s_type) => t!("option.trend", s_type = s_type),
             Self::Recent(range) => t!("option.recent", range = range),

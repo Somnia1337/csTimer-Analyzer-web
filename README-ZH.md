@@ -32,6 +32,7 @@
   - `ao{n}`：`n` 次去头去尾平均成绩
 - `pbs(stats)`：指标 `stats` 的个人最佳成绩的历史记录。
 - `group(stats, millis)`：将指标 `stats` 以 `millis` 毫秒为间隔进行分组，生成直方图。
+  - `millis` 可以为 `0`，此时会自动选取一个合适的间隔。
 - `trend(stats)`：跟踪指标 `stats` 的趋势，生成趋势图。
 - `commented`：筛选有注释的记录（如果你在跳 O / 跳 P 时写注释，这可能有帮助）。
 
@@ -68,5 +69,4 @@ commented
 
 ### Todo
 
-- 功能：将 `StatsScale` 0 视为“自动”。
 - 测试：添加测试模块。

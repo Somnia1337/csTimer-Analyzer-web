@@ -332,7 +332,12 @@ fn write_section<W: Write>(
         }
 
         AnalysisOption::Group(s_type, interval) => {
-            let groups = session.group(*interval, s_type);
+            let mut interval = *interval;
+            if interval == 0 {
+                interval = session.decide_interval();
+            }
+
+            let groups = session.group(interval, s_type);
 
             let cs = t!("colon-space");
             let desc = format!(
@@ -343,7 +348,7 @@ fn write_section<W: Write>(
                 t!("stats.groups-interval", interval = interval.as_seconds()),
             );
 
-            match session.draw_grouping(canvas, &groups, *interval, &desc) {
+            match session.draw_grouping(canvas, &groups, interval, &desc) {
                 Ok(()) => write_image_data_url(writer, canvas, &desc),
                 Err(e) => write_message(
                     writer,

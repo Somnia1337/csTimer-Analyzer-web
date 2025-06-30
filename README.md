@@ -32,6 +32,7 @@ The analyzer reads your options from the textarea, here's how to write it.
   - `ao{n}`: average of `n` solves
 - `pbs(stats)`: Tracks your personal best history for `stats` over time.
 - `group(stats, millis)`: Groups `stats` into intervals of `millis` milliseconds, producing a histogram.
+  - `millis` could be `0`, in which case the analyzer decides a proper interval.
 - `trend(stats)`: Tracks the trend of `stats`, generating a trend chart.
 - `commented`: Filters records with a comment(maybe useful if you comment when skipping OLL/PLL).
 
@@ -68,5 +69,4 @@ commented
 
 ### Todo
 
-- feat: treat `StatsScale` 0 as "auto".
 - test: add test modules.

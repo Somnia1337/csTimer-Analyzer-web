@@ -1,11 +1,11 @@
-[English](https://github.com/Somnia1337/csTimer-Analyzer-web/blob/main/README.md) | 中文
+[English](README.md) | 中文
 
 ## [csTimer 分析师(网页版)](https://somnia1337.github.io/csTimer-Analyzer-web/)
 
 [csTimer 分析师](https://github.com/Somnia1337/csTimer-Analyzer) 的网页版，利用强大的 [WebAssembly](https://developer.mozilla.org/zh-CN/docs/WebAssembly) 和 [Rust](https://www.rust-lang.org/zh-CN) 工具链实现。
 
 <div align=center>
-  <img src="./assets/csTimer-Analyzer-ZH.png">
+  <img src="assets/csTimer-Analyzer-ZH.png">
 </div>
 
 功能特点：
@@ -57,7 +57,7 @@ group(single, 500) # 500ms
 trend(ao12)
 trend(ao100)
 
-# ✨ NEW ✨ 最近记录
+# 最近记录
 recent(200)                    # 200 次复原
 recent(10%)                    # 10% 的复原
 recent(2025-01-01)             # 起始日期

@@ -1,11 +1,11 @@
-English | [中文](https://github.com/Somnia1337/csTimer-Analyzer-web/blob/main/README-ZH.md)
+English | [中文](README-ZH.md)
 
 ## [csTimer-Analyzer-web](https://somnia1337.github.io/csTimer-Analyzer-web/)
 
 The web app for [csTimer-Analyzer](https://github.com/Somnia1337/csTimer-Analyzer), leveraging the power of [WebAssembly](https://developer.mozilla.org/en-US/docs/WebAssembly) and the [Rust](https://www.rust-lang.org) toolchain.
 
 <div align=center>
-  <img src="./assets/csTimer-Analyzer.png">
+  <img src="assets/csTimer-Analyzer.png">
 </div>
 
 Features:
@@ -57,7 +57,7 @@ group(single, 500) # 500ms
 trend(ao12)
 trend(ao100)
 
-# ✨ NEW ✨ Recent solves
+# Recent solves
 recent(200)                    # 200 solves
 recent(10%)                    # 10% solves
 recent(2025-01-01)             # start date

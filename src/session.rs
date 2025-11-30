@@ -88,12 +88,12 @@ impl Session {
     }
 
     /// The number of `Record`s.
-    pub fn record_count(&self) -> usize {
+    pub const fn record_count(&self) -> usize {
         self.records.len()
     }
 
     /// The number of `Record`s that are not DNF.
-    pub fn record_not_dnf_count(&self) -> usize {
+    pub const fn record_not_dnf_count(&self) -> usize {
         self.records_not_dnf.len()
     }
 }
@@ -128,11 +128,7 @@ impl Session {
                 .iter()
                 .filter(|r| {
                     let date = r.date_time().date_naive();
-                    date >= *start
-                        && match end {
-                            Some(end) => date <= *end,
-                            None => true,
-                        }
+                    date >= *start && end.as_ref().is_none_or(|end| date <= *end)
                 })
                 .cloned()
                 .collect(),

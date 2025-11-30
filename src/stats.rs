@@ -22,7 +22,7 @@ const CAPTION_FONT_SIZE: i32 = 48;
 const LABEL_AREA_SIZE: i32 = 160;
 const LABEL_FONT_SIZE: i32 = 32;
 
-const MONOSPACE: &str = "JetBrains Mono, Consolas, Courier New";
+const MONOSPACE: &str = "JetBrains Mono, Consolas, Courier New, monospace";
 const PLOT_COLOR: RGBColor = RGBColor(91, 169, 253);
 
 /// The plain arithmetic mean over a sum of
@@ -164,11 +164,11 @@ impl Session {
         let mut pbs = Vec::new();
 
         for (i, record) in self.records().iter().enumerate().skip(s_scale - 1) {
-            if let Some(stats) = self.stats(i, s_type) {
-                if stats < pb {
-                    pb = stats;
-                    pbs.push((i, pb, Rc::clone(record)));
-                }
+            if let Some(stats) = self.stats(i, s_type)
+                && stats < pb
+            {
+                pb = stats;
+                pbs.push((i, pb, Rc::clone(record)));
             }
         }
 

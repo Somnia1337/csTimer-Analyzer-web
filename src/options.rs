@@ -161,10 +161,10 @@ impl fmt::Display for TargetRange {
                 f,
                 "{} ~ {}",
                 start.format("%Y-%m-%d"),
-                match end {
-                    Some(end) => end.format("%Y-%m-%d").to_string(),
-                    None => t!("option.now").to_string(),
-                },
+                end.as_ref().map_or_else(
+                    || t!("option.now").to_string(),
+                    |end| end.format("%Y-%m-%d").to_string()
+                ),
             ),
         }
     }
@@ -195,7 +195,7 @@ impl TryFrom<&str> for TargetRange {
             };
         }
 
-        let dates: Vec<&str> = input.split(',').map(|s| s.trim()).collect();
+        let dates: Vec<&str> = input.split(',').map(str::trim).collect();
 
         let start = NaiveDate::parse_from_str(dates[0], "%Y-%m-%d")?;
         if dates.len() == 1 {
@@ -271,42 +271,42 @@ impl TryFrom<&str> for AnalysisOption {
             return Ok(Self::Summary);
         }
 
-        if let Some(inner) = value.strip_prefix("pbs(") {
-            if let Some(inner) = inner.strip_suffix(")") {
-                let stats = StatsType::try_from(inner)?;
-                return Ok(Self::Pbs(stats));
-            }
+        if let Some(inner) = value.strip_prefix("pbs(")
+            && let Some(inner) = inner.strip_suffix(")")
+        {
+            let stats = StatsType::try_from(inner)?;
+            return Ok(Self::Pbs(stats));
         }
 
-        if let Some(inner) = value.strip_prefix("group(") {
-            if let Some(inner) = inner.strip_suffix(")") {
-                let splits: Vec<&str> = inner.split(',').collect();
-                let stats = StatsType::try_from(splits[0])?;
-                let interval = match splits[1].trim().parse() {
-                    Ok(int) => int,
-                    Err(e) => {
-                        return Err(ParseAnalysisOptionError::InvalidStats(
-                            ParseStatsTypeError::from(e),
-                        ));
-                    }
-                };
-                return Ok(Self::Group(stats, interval));
-            }
+        if let Some(inner) = value.strip_prefix("group(")
+            && let Some(inner) = inner.strip_suffix(")")
+        {
+            let splits: Vec<&str> = inner.split(',').collect();
+            let stats = StatsType::try_from(splits[0])?;
+            let interval = match splits[1].trim().parse() {
+                Ok(int) => int,
+                Err(e) => {
+                    return Err(ParseAnalysisOptionError::InvalidStats(
+                        ParseStatsTypeError::from(e),
+                    ));
+                }
+            };
+            return Ok(Self::Group(stats, interval));
         }
 
-        if let Some(inner) = value.strip_prefix("trend(") {
-            if let Some(inner) = inner.strip_suffix(")") {
-                let stats = StatsType::try_from(inner)?;
-                return Ok(Self::Trend(stats));
-            }
+        if let Some(inner) = value.strip_prefix("trend(")
+            && let Some(inner) = inner.strip_suffix(")")
+        {
+            let stats = StatsType::try_from(inner)?;
+            return Ok(Self::Trend(stats));
         }
 
-        if let Some(inner) = value.strip_prefix("recent(") {
-            if let Some(inner) = inner.strip_suffix(")") {
-                let range = TargetRange::try_from(inner)
-                    .map_err(ParseAnalysisOptionError::InvalidTarget)?;
-                return Ok(Self::Recent(range));
-            }
+        if let Some(inner) = value.strip_prefix("recent(")
+            && let Some(inner) = inner.strip_suffix(")")
+        {
+            let range =
+                TargetRange::try_from(inner).map_err(ParseAnalysisOptionError::InvalidTarget)?;
+            return Ok(Self::Recent(range));
         }
 
         if value == "commented" {

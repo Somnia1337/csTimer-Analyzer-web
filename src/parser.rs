@@ -1,10 +1,10 @@
+use serde_json::Value;
+use web_sys::js_sys::Date;
+
 use crate::options::AnalysisOption;
 use crate::record::{Record, SolveState};
 use crate::session::Session;
 use crate::time::Milliseconds;
-
-use serde_json::Value;
-use web_sys::js_sys::Date;
 
 // Gets the local offset from UTC in seconds.
 fn local_offset_seconds() -> i64 {
@@ -27,30 +27,29 @@ pub fn parse_sessions(input: &str) -> Vec<Session> {
         let offset = local_offset_seconds();
 
         for (key, value) in obj {
-            if key.starts_with("session") {
-                if let Some(id) = key
+            if key.starts_with("session")
+                && let Some(id) = key
                     .strip_prefix("session")
                     .and_then(|id| id.parse::<usize>().ok())
-                {
-                    let records = parse_records(value, offset);
-                    if records.is_empty() {
-                        continue;
-                    }
+            {
+                let records = parse_records(value, offset);
+                if records.is_empty() {
+                    continue;
+                }
 
-                    if let Some((_, name, rank, date_time)) =
-                        session_metadata.iter().find(|(sid, _, _, _)| *sid == id)
-                    {
-                        sessions.push(Session::from(
-                            *rank,
-                            if name.is_empty() {
-                                rank.to_string()
-                            } else {
-                                name.trim().to_owned()
-                            },
-                            (date_time.0 + offset, date_time.1 + offset),
-                            records,
-                        ));
-                    }
+                if let Some((_, name, rank, date_time)) =
+                    session_metadata.iter().find(|(sid, _, _, _)| *sid == id)
+                {
+                    sessions.push(Session::from(
+                        *rank,
+                        if name.is_empty() {
+                            rank.to_string()
+                        } else {
+                            name.trim().to_owned()
+                        },
+                        (date_time.0 + offset, date_time.1 + offset),
+                        records,
+                    ));
                 }
             }
         }

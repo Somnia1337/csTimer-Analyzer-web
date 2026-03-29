@@ -35,6 +35,7 @@ info = "Parsed `%{option_count}` option%{option_count_plural} (failures ignored 
 single = "single"
 now = "now"
 summary = "Summary"
+dnfasok = "Treat DNF records as OK (only for mean & average)"
 pbs = "PBs(**%{s_type}**)"
 group = "Group(**%{s_type}**, by %{interval}s)"
 group-by-zero = "Group(**%{s_type}**, auto)"

@@ -1,6 +1,6 @@
 export const CONFIG = {
   STORAGE: {
-    OPTIONS_KEY: "analysisOptionsv0.10.0",
+    OPTIONS_KEY: "analysisOptionsv0.14.0",
     LOCALE_KEY: "locale",
     FILE_LABEL_KEY: "fileLabel",
     NAV_HEADER_KEY: "navheader",
@@ -11,7 +11,7 @@ export const CONFIG = {
     HEIGHT: 1080,
   },
   FILE: {
-    MAX_SIZE_MB: 10,
+    MAX_SIZE_MB: 256,
     VALID_TYPES: ["text/plain"],
     VALID_EXTENSIONS: [".txt"],
   },

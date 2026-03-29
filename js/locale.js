@@ -45,6 +45,10 @@ export const defaultOptions = {
 # Summary
 summary
 
+# Treat DNF records as OK
+# (only for mean & average)
+# dnfasok ### This is off by default ###
+
 # PB histories
 pbs(single)
 pbs(mo3)
@@ -56,11 +60,11 @@ group(single, 500) # 500ms
 trend(ao12)
 trend(ao100)
 
-# Recent solves ✨
+# Recent solves
 recent(200) # 200 solves
 recent(10%) # 10% solves
-recent(2025-01-01) # start date
-recent(2024-01-01, 2024-12-31) # date range
+recent(2026-01-01) # start date
+recent(2025-01-01, 2025-12-31) # date range
 
 # Commented records
 commented`,
@@ -69,6 +73,10 @@ commented`,
 
 # 分组概览
 summary
+
+# 将 DNF 视作 OK
+#（只对 mean 和 average 生效）
+# dnfasok ### 默认关闭 ###
 
 # 个人最佳成绩历史
 pbs(single)
@@ -81,11 +89,11 @@ group(single, 500) # 500毫秒
 trend(ao12)
 trend(ao100)
 
-# 最近记录 ✨
+# 最近记录
 recent(200) # 200 次复原
 recent(10%) # 10% 的复原
-recent(2025-01-01) # 起始日期
-recent(2024-01-01, 2024-12-31) # 日期范围
+recent(2026-01-01) # 起始日期
+recent(2025-01-01, 2025-12-31) # 日期范围
 
 # 有注释的记录
 commented`,

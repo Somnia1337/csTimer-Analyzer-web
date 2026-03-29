@@ -20,6 +20,7 @@ thread_local! {
 /// every JS call to wasm functions.
 struct GlobalAnalysisState {
     options: Vec<AnalysisOption>,
+    dnfasok: bool,
     sessions: Vec<Session>,
     canvas: HtmlCanvasElement,
     parsing_time: Duration,
@@ -67,8 +68,13 @@ pub fn init_analysis(
     let parsing_time = parsing_timer.elapsed();
     let analysis_timer = Instant::now();
 
+    let dnfasok = options
+        .iter()
+        .any(|op| matches!(op, AnalysisOption::DnfAsOk));
+
     let state = GlobalAnalysisState {
         options,
+        dnfasok,
         sessions,
         canvas,
         parsing_time,
@@ -112,6 +118,10 @@ pub fn analysis_info() -> Result<JsValue, JsValue> {
                     )));
                 }
             }
+
+            state
+                .options
+                .retain(|op| !matches!(op, AnalysisOption::DnfAsOk));
         }
     });
 
@@ -140,7 +150,13 @@ pub fn analyze_nth_session(n: usize) -> Result<JsValue, JsValue> {
             let session = &state.sessions[n];
             let mut chunk = Vec::new();
 
-            match analyze_session(session, &state.options, &mut chunk, &state.canvas) {
+            match analyze_session(
+                session,
+                &state.options,
+                state.dnfasok,
+                &mut chunk,
+                &state.canvas,
+            ) {
                 Ok(duration) => {
                     state.session_times.push((session.rank(), duration));
                     let markdown = String::from_utf8(chunk)

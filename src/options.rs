@@ -220,6 +220,9 @@ pub enum AnalysisOption {
     /// A summary over solve times in the session.
     Summary,
 
+    /// Treat DNF records as Ok (only for mean & average).
+    DnfAsOk,
+
     /// PB histories of some stats type.
     Pbs(StatsType),
 
@@ -242,6 +245,7 @@ impl fmt::Display for AnalysisOption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let label = match self {
             Self::Summary => t!("option.summary"),
+            Self::DnfAsOk => t!("option.dnfasok"),
             Self::Pbs(s_type) => t!("option.pbs", s_type = s_type),
             Self::Group(s_type, interval) => {
                 if *interval > 0 {
@@ -269,6 +273,10 @@ impl TryFrom<&str> for AnalysisOption {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         if value == "summary" {
             return Ok(Self::Summary);
+        }
+
+        if value == "dnfasok" {
+            return Ok(Self::DnfAsOk);
         }
 
         if let Some(inner) = value.strip_prefix("pbs(")

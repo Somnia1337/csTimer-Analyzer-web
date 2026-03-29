@@ -43,10 +43,15 @@ impl Session {
     }
 
     /// Mean of solve times that are not DNF.
-    fn mean(&self) -> Milliseconds {
-        let sum: Milliseconds = self.records_not_dnf().iter().map(|r| r.time()).sum();
+    fn mean(&self, dnfasok: bool) -> Milliseconds {
+        let iter = if dnfasok {
+            self.records()
+        } else {
+            self.records_not_dnf()
+        };
+        let sum: Milliseconds = iter.iter().map(|r| r.time()).sum();
 
-        round_mean(sum, self.record_not_dnf_count())
+        round_mean(sum, iter.len())
     }
 
     /// Count of `Record`s with the specified `SolveState`.
@@ -58,7 +63,7 @@ impl Session {
     }
 
     /// Stats a single solve, or the mean or average over some solves.
-    fn stats(&self, pos: usize, s_type: &StatsType) -> Option<Milliseconds> {
+    fn stats(&self, pos: usize, s_type: &StatsType, dnfasok: bool) -> Option<Milliseconds> {
         match s_type {
             StatsType::Single => {
                 let r = &self.records()[pos];
@@ -73,7 +78,7 @@ impl Session {
             StatsType::Mean(s_scale) => {
                 let chunk = &self.records()[pos + 1 - s_scale..=pos];
 
-                if chunk.iter().any(|r| r.solve_state().is_dnf()) {
+                if chunk.iter().any(|r| r.solve_state().is_dnf() && !dnfasok) {
                     None
                 } else {
                     Some(round_mean(chunk.iter().map(|r| r.time()).sum(), *s_scale))
@@ -85,14 +90,19 @@ impl Session {
                 let cut_off = (*s_scale as f32 * CUT_OFF).ceil() as usize;
                 let take = s_scale.saturating_sub(cut_off * 2);
 
-                if take == 0 || chunk.iter().filter(|r| r.solve_state().is_dnf()).count() > cut_off
+                if take == 0
+                    || chunk
+                        .iter()
+                        .filter(|r| r.solve_state().is_dnf() && !dnfasok)
+                        .count()
+                        > cut_off
                 {
                     None
                 } else {
                     let mut chunk: Vec<Milliseconds> = chunk
                         .iter()
                         .map(|r| {
-                            if r.solve_state().is_dnf() {
+                            if r.solve_state().is_dnf() && !dnfasok {
                                 u32::MAX
                             } else {
                                 r.time()
@@ -111,10 +121,10 @@ impl Session {
     }
 
     /// All non-DNF data of the specified `StatsType` over the `Session`.
-    fn stats_data(&self, s_type: &StatsType) -> Vec<Milliseconds> {
+    fn stats_data(&self, s_type: &StatsType, dnfasok: bool) -> Vec<Milliseconds> {
         (0..self.record_count())
             .skip(s_type.scale() - 1)
-            .filter_map(|i| self.stats(i, s_type))
+            .filter_map(|i| self.stats(i, s_type, dnfasok))
             .collect()
     }
 }
@@ -133,6 +143,7 @@ impl Session {
     /// where the average could be DNF represented by `None`.
     pub fn summary(
         &self,
+        dnfasok: bool,
     ) -> (
         Milliseconds,
         Milliseconds,
@@ -141,8 +152,8 @@ impl Session {
     ) {
         let record_count = self.record_count();
         let (best, worst) = self.best_and_worst();
-        let mean = self.mean();
-        let average = self.stats(record_count - 1, &StatsType::Average(record_count));
+        let mean = self.mean(dnfasok);
+        let average = self.stats(record_count - 1, &StatsType::Average(record_count), dnfasok);
 
         (best, worst, mean, average)
     }
@@ -158,13 +169,13 @@ impl Session {
 
     /// `Record`s that breaked the personal best of the
     /// specified `StatsType`, with its index and the new PB.
-    pub fn pbs(&self, s_type: &StatsType) -> Vec<(usize, Milliseconds, Rc<Record>)> {
+    pub fn pbs(&self, s_type: &StatsType, dnfasok: bool) -> Vec<(usize, Milliseconds, Rc<Record>)> {
         let s_scale = s_type.scale();
         let mut pb = u32::MAX;
         let mut pbs = Vec::new();
 
         for (i, record) in self.records().iter().enumerate().skip(s_scale - 1) {
-            if let Some(stats) = self.stats(i, s_type)
+            if let Some(stats) = self.stats(i, s_type, dnfasok)
                 && stats < pb
             {
                 pb = stats;
@@ -220,8 +231,13 @@ impl Session {
 
     /// Splits times of the specified `StatsType`
     /// into groups, by a fixed interval.
-    pub fn group(&self, interval: Milliseconds, s_type: &StatsType) -> Vec<GroupTime> {
-        let data = self.stats_data(s_type);
+    pub fn group(
+        &self,
+        interval: Milliseconds,
+        s_type: &StatsType,
+        dnfasok: bool,
+    ) -> Vec<GroupTime> {
+        let data = self.stats_data(s_type, dnfasok);
         let (mut min, mut max) = (
             data.iter().min().copied().unwrap_or_default(),
             data.iter().max().copied().unwrap_or_default(),
@@ -244,12 +260,12 @@ impl Session {
     }
 
     /// A trend of time of the specified type over solves.
-    pub fn trend(&self, s_type: &StatsType) -> Vec<(usize, u32)> {
+    pub fn trend(&self, s_type: &StatsType, dnfasok: bool) -> Vec<(usize, u32)> {
         let s_scale = s_type.scale();
         let mut trends: Vec<(usize, u32)> = (0..self.record_count()).map(|i| (i + 1, 0)).collect();
 
         for (i, _) in self.records().iter().enumerate().skip(s_scale - 1) {
-            trends[i].1 = self.stats(i, s_type).unwrap_or_default();
+            trends[i].1 = self.stats(i, s_type, dnfasok).unwrap_or_default();
         }
 
         trends

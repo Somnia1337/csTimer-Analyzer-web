@@ -13,7 +13,7 @@ All user feedbacks, interpretation and completion status will be documented in t
 ### ✅ Implemented
 
 ```
-#1 #2 #4 #5
+#1 #2 #4 #5 #7
 ```
 
 ### ❌ Rejected
@@ -38,3 +38,7 @@ All user feedbacks, interpretation and completion status will be documented in t
 > `2025-05-11` 折线图能不能做成半对数图，也就是横轴是练习量的对数
 
 - ❌ `#6` Change: use a logarithmic scale for the x-axis on trending charts.
+
+> `2026-03-29` 希望可以增加一个分析分组内含 dnf 的平均成绩分析（就是把 dnf 的成绩当成正常成绩算平均），这对我们盲拧玩家真的很重要
+
+- ✅ `#7` Add: new analysis option to treat DNF records as OK.

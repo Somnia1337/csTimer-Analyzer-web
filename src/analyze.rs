@@ -154,8 +154,12 @@ fn write_records_detail<W: Write>(
 }
 
 /// Writes two tables in the summary section.
-fn write_summary_table<W: Write>(writer: &mut W, session: &Session) -> io::Result<()> {
-    let (best, worst, mean, average) = session.summary();
+fn write_summary_table<W: Write>(
+    writer: &mut W,
+    session: &Session,
+    dnfasok: bool,
+) -> io::Result<()> {
+    let (best, worst, mean, average) = session.summary(dnfasok);
     let summary = format!(
         r"| {} | {} | {} | {} |
 | :-: | :-: | :-: | :-: |
@@ -247,6 +251,7 @@ fn write_section<W: Write>(
     writer: &mut W,
     session: &Session,
     op: &AnalysisOption,
+    dnfasok: bool,
     canvas: &HtmlCanvasElement,
 ) -> io::Result<()> {
     write_heading(writer, 4, &format!("{}", op))?;
@@ -263,10 +268,13 @@ fn write_section<W: Write>(
     }
 
     match op {
-        AnalysisOption::Summary => write_summary_table(writer, session),
+        AnalysisOption::Summary => write_summary_table(writer, session, dnfasok),
+
+        // DEBUG ONLY
+        AnalysisOption::DnfAsOk => unreachable!(),
 
         AnalysisOption::Pbs(s_type) => {
-            let pbs = session.pbs(s_type);
+            let pbs = session.pbs(s_type, dnfasok);
 
             if pbs.is_empty() {
                 return write_message(
@@ -337,7 +345,7 @@ fn write_section<W: Write>(
                 interval = session.decide_interval();
             }
 
-            let groups = session.group(interval, s_type);
+            let groups = session.group(interval, s_type, dnfasok);
 
             let cs = t!("colon-space");
             let desc = format!(
@@ -359,7 +367,7 @@ fn write_section<W: Write>(
         }
 
         AnalysisOption::Trend(s_type) => {
-            let trends = session.trend(s_type);
+            let trends = session.trend(s_type, dnfasok);
 
             if trends.iter().all(|p| p.1 == 0) {
                 return write_message(writer, &t!("label.info"), &t!("info.all-dnf"));
@@ -394,7 +402,7 @@ fn write_section<W: Write>(
                     record_count_plural = plural_form(record_count)
                 );
                 writeln!(writer, "{}\n", t_recent_record_count)?;
-                write_summary_table(writer, &sub_session)
+                write_summary_table(writer, &sub_session, dnfasok)
             }
             None => write_message(writer, &t!("label.info"), &t!("info.no-recent-record")),
         },
@@ -415,6 +423,7 @@ fn write_section<W: Write>(
 pub fn analyze_session<W: Write>(
     session: &Session,
     options: &[AnalysisOption],
+    dnfasok: bool,
     writer: &mut W,
     canvas: &HtmlCanvasElement,
 ) -> io::Result<Duration> {
@@ -435,11 +444,11 @@ pub fn analyze_session<W: Write>(
     write_heading(writer, 3, &session_heading)?;
     write_session_date_time(writer, session)?;
 
-    if session.records_not_dnf().is_empty() {
+    if session.records_not_dnf().is_empty() && !dnfasok {
         write_message(writer, &t!("label.info"), &t!("info.all-dnf"))?;
     } else {
         for a_type in options {
-            write_section(writer, session, a_type, canvas)?;
+            write_section(writer, session, a_type, dnfasok, canvas)?;
         }
     }
 

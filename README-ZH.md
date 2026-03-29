@@ -26,6 +26,7 @@
 分析器会从输入框读取分析选项，以下是配置说明。
 
 - `summary`：提供分组的概览，包括最好和最差的时间、平均值、均值，和 `+2` 及 `DNF` 的次数统计。
+- `dnfasok`：将 DNF 视作 OK（只对 mean 和 average 生效）。
 - `stats`：统计的指标，从以下选项中选择一个：
   - `single`：单次成绩
   - `mo{n}`：`n` 次平均成绩
@@ -40,28 +41,31 @@
 
 ```text
 # 分析选项
-
 # 注释以 '#' 开头
 
 # 分组概览
 summary
+
+# 将 DNF 视作 OK
+#（只对 mean 和 average 生效）
+# dnfasok ### 默认关闭 ###
 
 # 个人最佳成绩历史
 pbs(single)
 pbs(mo3)
 
 # 直方图
-group(single, 500) # 500ms
+group(single, 500) # 500毫秒
 
 # 趋势图
 trend(ao12)
 trend(ao100)
 
 # 最近记录
-recent(200)                    # 200 次复原
-recent(10%)                    # 10% 的复原
-recent(2025-01-01)             # 起始日期
-recent(2024-01-01, 2024-12-31) # 日期范围
+recent(200) # 200 次复原
+recent(10%) # 10% 的复原
+recent(2026-01-01) # 起始日期
+recent(2025-01-01, 2025-12-31) # 日期范围
 
 # 有注释的记录
 commented

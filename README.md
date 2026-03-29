@@ -26,6 +26,7 @@ Features:
 The analyzer reads your options from the textarea, here's how to write it.
 
 - `summary`: Provides an summary of a session, including best and worst times, mean and average, and counts of `+2`s and `DNF`s.
+- `dnfasok`: Treat DNF records as OK (only for mean & average).
 - `stats`: The metric of statistics, choose one of these:
   - `single`: single solves
   - `mo{n}`: mean of `n` solves
@@ -40,13 +41,16 @@ Check below for a real example of options.
 
 ```text
 # The options for analysis
-
 # Comment starts with '#'
 
 # Summary
 summary
 
-# Pb histories
+# Treat DNF records as OK
+# (only for mean & average)
+# dnfasok ### This is off by default ###
+
+# PB histories
 pbs(single)
 pbs(mo3)
 
@@ -58,10 +62,10 @@ trend(ao12)
 trend(ao100)
 
 # Recent solves
-recent(200)                    # 200 solves
-recent(10%)                    # 10% solves
-recent(2025-01-01)             # start date
-recent(2024-01-01, 2024-12-31) # date range
+recent(200) # 200 solves
+recent(10%) # 10% solves
+recent(2026-01-01) # start date
+recent(2025-01-01, 2025-12-31) # date range
 
 # Commented records
 commented
